@@ -12,13 +12,23 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Use node-server preset so Render can run the output with plain Node.js.
+  // Cloudflare Workers (the default) only exports a fetch() handler, not an HTTP server.
+  nitro: {
+    preset: "node-server",
+    output: {
+      dir: "dist",
+      serverDir: "dist/server",
+      publicDir: "dist/client",
+    },
+  },
   vite: {
     server: {
       host: true,
       port: 0,
       strictPort: false,
       allowedHosts: [
-        "campus-boarding-finder-afa540be.onrender.com",
+        "bh-management.onrender.com",
         ".onrender.com",
         "localhost",
         "127.0.0.1",
@@ -27,7 +37,7 @@ export default defineConfig({
     preview: {
       host: true,
       allowedHosts: [
-        "campus-boarding-finder-afa540be.onrender.com",
+        "bh-management.onrender.com",
         ".onrender.com",
         "localhost",
         "127.0.0.1",

@@ -9,7 +9,7 @@
     "build:render": "npx prisma generate && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "start": "node dist/server/server.js",
+    "start": "node dist/server/index.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
