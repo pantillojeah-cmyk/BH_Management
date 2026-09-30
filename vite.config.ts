@@ -17,7 +17,21 @@ export default defineConfig({
       host: true,
       port: 0,
       strictPort: false,
-      allowedHosts: true,
+      allowedHosts: [
+        "campus-boarding-finder-afa540be.onrender.com",
+        ".onrender.com",
+        "localhost",
+        "127.0.0.1",
+      ],
+    },
+    preview: {
+      host: true,
+      allowedHosts: [
+        "campus-boarding-finder-afa540be.onrender.com",
+        ".onrender.com",
+        "localhost",
+        "127.0.0.1",
+      ],
     },
   },
 });
