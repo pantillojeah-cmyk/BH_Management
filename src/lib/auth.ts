@@ -11,7 +11,7 @@ export const auth = betterAuth({
   },
   trustedOrigins: [
     "http://localhost:5173",
-    "https://campus-boarding-finder-afa540be-3.onrender.com",
+    "https://bh-management.onrender.com",
     process.env.BETTER_AUTH_URL,
     process.env.VITE_APP_URL,
   ].filter((url): url is string => Boolean(url)),
