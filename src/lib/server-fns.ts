@@ -1,12 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
-
-// ─── Helper: get current user from request ───────────────────────────────────
-async function getSessionUser(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  return session?.user ?? null;
-}
 
 // ─── Boarding Houses ──────────────────────────────────────────────────────────
 

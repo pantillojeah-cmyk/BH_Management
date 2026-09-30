@@ -7,7 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "postbuild": "node -e \"require('fs').writeFileSync('dist/server/server.js', 'import(\\'./index.mjs\\');')\"",
-    "build:render": "npm install --include=dev && npx prisma generate && vite build",
+    "build:render": "npm install --include=dev && npx prisma db push && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "start": "node dist/server/index.mjs",
