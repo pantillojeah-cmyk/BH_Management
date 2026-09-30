@@ -17,83 +17,109 @@ export type Database = {
       activity_logs: {
         Row: {
           action: string
-          actor_id: string | null
           created_at: string
           details: Json | null
-          entity_id: string | null
-          entity_type: string | null
           id: string
+          user_id: string | null
         }
         Insert: {
           action: string
-          actor_id?: string | null
           created_at?: string
           details?: Json | null
-          entity_id?: string | null
-          entity_type?: string | null
           id?: string
+          user_id?: string | null
         }
         Update: {
           action?: string
-          actor_id?: string | null
           created_at?: string
           details?: Json | null
-          entity_id?: string | null
-          entity_type?: string | null
           id?: string
+          user_id?: string | null
         }
         Relationships: []
+      }
+      boarding_house_photos: {
+        Row: {
+          boarding_house_id: string
+          created_at: string
+          id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          boarding_house_id: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          boarding_house_id?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boarding_house_photos_boarding_house_id_fkey"
+            columns: ["boarding_house_id"]
+            isOneToOne: false
+            referencedRelation: "boarding_houses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       boarding_houses: {
         Row: {
           address: string
-          approval: Database["public"]["Enums"]["listing_approval"]
-          approval_reason: string | null
+          amenities: string[]
+          available_vacancies: number
           contact_number: string
-          cover_photo: string | null
+          cover_photo_url: string | null
           created_at: string
           description: string | null
-          distance_meters: number
-          house_type: Database["public"]["Enums"]["house_type"]
           id: string
           landmark: string | null
+          monthly_fee: number
           name: string
-          owner_id: string
-          photos: string[]
+          num_rooms: number
+          owner_id: string | null
+          status: Database["public"]["Enums"]["listing_status"]
           updated_at: string
         }
         Insert: {
           address: string
-          approval?: Database["public"]["Enums"]["listing_approval"]
-          approval_reason?: string | null
+          amenities?: string[]
+          available_vacancies?: number
           contact_number: string
-          cover_photo?: string | null
+          cover_photo_url?: string | null
           created_at?: string
           description?: string | null
-          distance_meters?: number
-          house_type?: Database["public"]["Enums"]["house_type"]
           id?: string
           landmark?: string | null
+          monthly_fee?: number
           name: string
-          owner_id: string
-          photos?: string[]
+          num_rooms?: number
+          owner_id?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
           updated_at?: string
         }
         Update: {
           address?: string
-          approval?: Database["public"]["Enums"]["listing_approval"]
-          approval_reason?: string | null
+          amenities?: string[]
+          available_vacancies?: number
           contact_number?: string
-          cover_photo?: string | null
+          cover_photo_url?: string | null
           created_at?: string
           description?: string | null
-          distance_meters?: number
-          house_type?: Database["public"]["Enums"]["house_type"]
           id?: string
           landmark?: string | null
+          monthly_fee?: number
           name?: string
-          owner_id?: string
-          photos?: string[]
+          num_rooms?: number
+          owner_id?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
           updated_at?: string
         }
         Relationships: []
@@ -103,19 +129,16 @@ export type Database = {
           boarding_house_id: string
           created_at: string
           customer_id: string
-          id: string
         }
         Insert: {
           boarding_house_id: string
           created_at?: string
           customer_id: string
-          id?: string
         }
         Update: {
           boarding_house_id?: string
           created_at?: string
           customer_id?: string
-          id?: string
         }
         Relationships: [
           {
@@ -135,7 +158,6 @@ export type Database = {
           id: string
           message: string
           status: Database["public"]["Enums"]["inquiry_status"]
-          updated_at: string
         }
         Insert: {
           boarding_house_id: string
@@ -144,7 +166,6 @@ export type Database = {
           id?: string
           message: string
           status?: Database["public"]["Enums"]["inquiry_status"]
-          updated_at?: string
         }
         Update: {
           boarding_house_id?: string
@@ -153,7 +174,6 @@ export type Database = {
           id?: string
           message?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
-          updated_at?: string
         }
         Relationships: [
           {
@@ -165,32 +185,32 @@ export type Database = {
           },
         ]
       }
-      owner_status: {
+      notifications: {
         Row: {
+          body: string | null
           created_at: string
-          decided_at: string | null
-          decided_by: string | null
-          reason: string | null
-          status: Database["public"]["Enums"]["owner_approval"]
-          updated_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
           user_id: string
         }
         Insert: {
+          body?: string | null
           created_at?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          reason?: string | null
-          status?: Database["public"]["Enums"]["owner_approval"]
-          updated_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
           user_id: string
         }
         Update: {
+          body?: string | null
           created_at?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          reason?: string | null
-          status?: Database["public"]["Enums"]["owner_approval"]
-          updated_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -199,7 +219,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
-          email: string
+          email: string | null
           full_name: string
           id: string
           phone: string | null
@@ -208,7 +228,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           full_name?: string
           id: string
           phone?: string | null
@@ -217,60 +237,13 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           full_name?: string
           id?: string
           phone?: string | null
           updated_at?: string
         }
         Relationships: []
-      }
-      rooms: {
-        Row: {
-          boarding_house_id: string
-          capacity: number
-          created_at: string
-          description: string | null
-          id: string
-          monthly_rent: number
-          photos: string[]
-          room_name: string
-          status: Database["public"]["Enums"]["room_status"]
-          updated_at: string
-        }
-        Insert: {
-          boarding_house_id: string
-          capacity?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          monthly_rent?: number
-          photos?: string[]
-          room_name: string
-          status?: Database["public"]["Enums"]["room_status"]
-          updated_at?: string
-        }
-        Update: {
-          boarding_house_id?: string
-          capacity?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          monthly_rent?: number
-          photos?: string[]
-          room_name?: string
-          status?: Database["public"]["Enums"]["room_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rooms_boarding_house_id_fkey"
-            columns: ["boarding_house_id"]
-            isOneToOne: false
-            referencedRelation: "boarding_houses"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_roles: {
         Row: {
@@ -298,6 +271,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_admin_if_first: { Args: never; Returns: boolean }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -308,11 +286,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "owner" | "customer"
-      house_type: "mixed" | "male_only" | "female_only" | "family"
       inquiry_status: "new" | "responded" | "closed"
-      listing_approval: "pending" | "approved" | "rejected"
-      owner_approval: "pending" | "approved" | "rejected"
-      room_status: "vacant" | "occupied"
+      listing_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -441,11 +416,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "owner", "customer"],
-      house_type: ["mixed", "male_only", "female_only", "family"],
       inquiry_status: ["new", "responded", "closed"],
-      listing_approval: ["pending", "approved", "rejected"],
-      owner_approval: ["pending", "approved", "rejected"],
-      room_status: ["vacant", "occupied"],
+      listing_status: ["pending", "approved", "rejected"],
     },
   },
 } as const

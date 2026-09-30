@@ -1,5 +1,6 @@
 {
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "eslint.config.js"],
+  "$schema": "./.vscode/tsconfig.schema.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/types/**/*.d.ts", "vite.config.ts", "eslint.config.js"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

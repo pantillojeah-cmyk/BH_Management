@@ -9,21 +9,51 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SetupRouteImport } from './routes/setup'
+import { Route as ReservationsRouteImport } from './routes/reservations'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OwnerRouteImport } from './routes/owner'
+import { Route as ManagementRouteImport } from './routes/management'
+import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as BrowseRouteImport } from './routes/browse'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BoardingHouseIdRouteImport } from './routes/boarding-house.$id'
-import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
-import { Route as AuthenticatedCustomerRouteImport } from './routes/_authenticated/customer'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedCustomerProfileRouteImport } from './routes/_authenticated/customer/profile'
+import { Route as OwnerLoginRouteImport } from './routes/owner_.login'
+import { Route as ManagementLoginRouteImport } from './routes/management_.login'
+import { Route as ListingIdRouteImport } from './routes/listing.$id'
+import { Route as CustomerLoginRouteImport } from './routes/customer_.login'
+import { Route as ApiUserRoleRouteImport } from './routes/api/user-role'
+import { Route as ApiUploadRouteImport } from './routes/api/upload'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as ApiManagementExportListingsSplatRouteImport } from './routes/api/management.export-listings.$'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservationsRoute = ReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerRoute = OwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementRoute = ManagementRouteImport.update({
+  id: '/management',
+  path: '/management',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowseRoute = BrowseRouteImport.update({
@@ -31,147 +61,226 @@ const BrowseRoute = BrowseRouteImport.update({
   path: '/browse',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BoardingHouseIdRoute = BoardingHouseIdRouteImport.update({
-  id: '/boarding-house/$id',
-  path: '/boarding-house/$id',
+const OwnerLoginRoute = OwnerLoginRouteImport.update({
+  id: '/owner_/login',
+  path: '/owner/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedOwnerRoute = AuthenticatedOwnerRouteImport.update({
-  id: '/owner',
-  path: '/owner',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const ManagementLoginRoute = ManagementLoginRouteImport.update({
+  id: '/management_/login',
+  path: '/management/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedCustomerRoute = AuthenticatedCustomerRouteImport.update({
-  id: '/customer',
-  path: '/customer',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const ListingIdRoute = ListingIdRouteImport.update({
+  id: '/listing/$id',
+  path: '/listing/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const CustomerLoginRoute = CustomerLoginRouteImport.update({
+  id: '/customer_/login',
+  path: '/customer/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedCustomerProfileRoute =
-  AuthenticatedCustomerProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedCustomerRoute,
+const ApiUserRoleRoute = ApiUserRoleRouteImport.update({
+  id: '/api/user-role',
+  path: '/api/user-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadRoute = ApiUploadRouteImport.update({
+  id: '/api/upload',
+  path: '/api/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiManagementExportListingsSplatRoute =
+  ApiManagementExportListingsSplatRouteImport.update({
+    id: '/api/management/export-listings/$',
+    path: '/api/management/export-listings/$',
+    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/admin': typeof AuthenticatedAdminRoute
-  '/customer': typeof AuthenticatedCustomerRouteWithChildren
-  '/owner': typeof AuthenticatedOwnerRoute
-  '/boarding-house/$id': typeof BoardingHouseIdRoute
-  '/customer/profile': typeof AuthenticatedCustomerProfileRoute
+  '/favorites': typeof FavoritesRoute
+  '/management': typeof ManagementRoute
+  '/owner': typeof OwnerRoute
+  '/profile': typeof ProfileRoute
+  '/reservations': typeof ReservationsRoute
+  '/setup': typeof SetupRoute
+  '/api/upload': typeof ApiUploadRoute
+  '/api/user-role': typeof ApiUserRoleRoute
+  '/customer/login': typeof CustomerLoginRoute
+  '/listing/$id': typeof ListingIdRoute
+  '/management/login': typeof ManagementLoginRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/management/export-listings/$': typeof ApiManagementExportListingsSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/admin': typeof AuthenticatedAdminRoute
-  '/customer': typeof AuthenticatedCustomerRouteWithChildren
-  '/owner': typeof AuthenticatedOwnerRoute
-  '/boarding-house/$id': typeof BoardingHouseIdRoute
-  '/customer/profile': typeof AuthenticatedCustomerProfileRoute
+  '/favorites': typeof FavoritesRoute
+  '/management': typeof ManagementRoute
+  '/owner': typeof OwnerRoute
+  '/profile': typeof ProfileRoute
+  '/reservations': typeof ReservationsRoute
+  '/setup': typeof SetupRoute
+  '/api/upload': typeof ApiUploadRoute
+  '/api/user-role': typeof ApiUserRoleRoute
+  '/customer/login': typeof CustomerLoginRoute
+  '/listing/$id': typeof ListingIdRoute
+  '/management/login': typeof ManagementLoginRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/management/export-listings/$': typeof ApiManagementExportListingsSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/about': typeof AboutRoute
-  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/customer': typeof AuthenticatedCustomerRouteWithChildren
-  '/_authenticated/owner': typeof AuthenticatedOwnerRoute
-  '/boarding-house/$id': typeof BoardingHouseIdRoute
-  '/_authenticated/customer/profile': typeof AuthenticatedCustomerProfileRoute
+  '/favorites': typeof FavoritesRoute
+  '/management': typeof ManagementRoute
+  '/owner': typeof OwnerRoute
+  '/profile': typeof ProfileRoute
+  '/reservations': typeof ReservationsRoute
+  '/setup': typeof SetupRoute
+  '/api/upload': typeof ApiUploadRoute
+  '/api/user-role': typeof ApiUserRoleRoute
+  '/customer_/login': typeof CustomerLoginRoute
+  '/listing/$id': typeof ListingIdRoute
+  '/management_/login': typeof ManagementLoginRoute
+  '/owner_/login': typeof OwnerLoginRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/management/export-listings/$': typeof ApiManagementExportListingsSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
-    | '/auth'
     | '/browse'
-    | '/reset-password'
-    | '/admin'
-    | '/customer'
+    | '/favorites'
+    | '/management'
     | '/owner'
-    | '/boarding-house/$id'
-    | '/customer/profile'
+    | '/profile'
+    | '/reservations'
+    | '/setup'
+    | '/api/upload'
+    | '/api/user-role'
+    | '/customer/login'
+    | '/listing/$id'
+    | '/management/login'
+    | '/owner/login'
+    | '/api/auth/$'
+    | '/api/management/export-listings/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
-    | '/auth'
     | '/browse'
-    | '/reset-password'
-    | '/admin'
-    | '/customer'
+    | '/favorites'
+    | '/management'
     | '/owner'
-    | '/boarding-house/$id'
-    | '/customer/profile'
+    | '/profile'
+    | '/reservations'
+    | '/setup'
+    | '/api/upload'
+    | '/api/user-role'
+    | '/customer/login'
+    | '/listing/$id'
+    | '/management/login'
+    | '/owner/login'
+    | '/api/auth/$'
+    | '/api/management/export-listings/$'
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
-    | '/about'
-    | '/auth'
     | '/browse'
-    | '/reset-password'
-    | '/_authenticated/admin'
-    | '/_authenticated/customer'
-    | '/_authenticated/owner'
-    | '/boarding-house/$id'
-    | '/_authenticated/customer/profile'
+    | '/favorites'
+    | '/management'
+    | '/owner'
+    | '/profile'
+    | '/reservations'
+    | '/setup'
+    | '/api/upload'
+    | '/api/user-role'
+    | '/customer_/login'
+    | '/listing/$id'
+    | '/management_/login'
+    | '/owner_/login'
+    | '/api/auth/$'
+    | '/api/management/export-listings/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AboutRoute: typeof AboutRoute
-  AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  BoardingHouseIdRoute: typeof BoardingHouseIdRoute
+  FavoritesRoute: typeof FavoritesRoute
+  ManagementRoute: typeof ManagementRoute
+  OwnerRoute: typeof OwnerRoute
+  ProfileRoute: typeof ProfileRoute
+  ReservationsRoute: typeof ReservationsRoute
+  SetupRoute: typeof SetupRoute
+  ApiUploadRoute: typeof ApiUploadRoute
+  ApiUserRoleRoute: typeof ApiUserRoleRoute
+  CustomerLoginRoute: typeof CustomerLoginRoute
+  ListingIdRoute: typeof ListingIdRoute
+  ManagementLoginRoute: typeof ManagementLoginRoute
+  OwnerLoginRoute: typeof OwnerLoginRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiManagementExportListingsSplatRoute: typeof ApiManagementExportListingsSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservations': {
+      id: '/reservations'
+      path: '/reservations'
+      fullPath: '/reservations'
+      preLoaderRoute: typeof ReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner': {
+      id: '/owner'
+      path: '/owner'
+      fullPath: '/owner'
+      preLoaderRoute: typeof OwnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management': {
+      id: '/management'
+      path: '/management'
+      fullPath: '/management'
+      preLoaderRoute: typeof ManagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/browse': {
@@ -181,27 +290,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -209,81 +297,93 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/boarding-house/$id': {
-      id: '/boarding-house/$id'
-      path: '/boarding-house/$id'
-      fullPath: '/boarding-house/$id'
-      preLoaderRoute: typeof BoardingHouseIdRouteImport
+    '/owner_/login': {
+      id: '/owner_/login'
+      path: '/owner/login'
+      fullPath: '/owner/login'
+      preLoaderRoute: typeof OwnerLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/owner': {
-      id: '/_authenticated/owner'
-      path: '/owner'
-      fullPath: '/owner'
-      preLoaderRoute: typeof AuthenticatedOwnerRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/management_/login': {
+      id: '/management_/login'
+      path: '/management/login'
+      fullPath: '/management/login'
+      preLoaderRoute: typeof ManagementLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/customer': {
-      id: '/_authenticated/customer'
-      path: '/customer'
-      fullPath: '/customer'
-      preLoaderRoute: typeof AuthenticatedCustomerRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/listing/$id': {
+      id: '/listing/$id'
+      path: '/listing/$id'
+      fullPath: '/listing/$id'
+      preLoaderRoute: typeof ListingIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/customer_/login': {
+      id: '/customer_/login'
+      path: '/customer/login'
+      fullPath: '/customer/login'
+      preLoaderRoute: typeof CustomerLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/customer/profile': {
-      id: '/_authenticated/customer/profile'
-      path: '/profile'
-      fullPath: '/customer/profile'
-      preLoaderRoute: typeof AuthenticatedCustomerProfileRouteImport
-      parentRoute: typeof AuthenticatedCustomerRoute
+    '/api/user-role': {
+      id: '/api/user-role'
+      path: '/api/user-role'
+      fullPath: '/api/user-role'
+      preLoaderRoute: typeof ApiUserRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/upload': {
+      id: '/api/upload'
+      path: '/api/upload'
+      fullPath: '/api/upload'
+      preLoaderRoute: typeof ApiUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/management/export-listings/$': {
+      id: '/api/management/export-listings/$'
+      path: '/api/management/export-listings/$'
+      fullPath: '/api/management/export-listings/$'
+      preLoaderRoute: typeof ApiManagementExportListingsSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AuthenticatedCustomerRouteChildren {
-  AuthenticatedCustomerProfileRoute: typeof AuthenticatedCustomerProfileRoute
-}
-
-const AuthenticatedCustomerRouteChildren: AuthenticatedCustomerRouteChildren = {
-  AuthenticatedCustomerProfileRoute: AuthenticatedCustomerProfileRoute,
-}
-
-const AuthenticatedCustomerRouteWithChildren =
-  AuthenticatedCustomerRoute._addFileChildren(
-    AuthenticatedCustomerRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedCustomerRoute: typeof AuthenticatedCustomerRouteWithChildren
-  AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedCustomerRoute: AuthenticatedCustomerRouteWithChildren,
-  AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AboutRoute: AboutRoute,
-  AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  BoardingHouseIdRoute: BoardingHouseIdRoute,
+  FavoritesRoute: FavoritesRoute,
+  ManagementRoute: ManagementRoute,
+  OwnerRoute: OwnerRoute,
+  ProfileRoute: ProfileRoute,
+  ReservationsRoute: ReservationsRoute,
+  SetupRoute: SetupRoute,
+  ApiUploadRoute: ApiUploadRoute,
+  ApiUserRoleRoute: ApiUserRoleRoute,
+  CustomerLoginRoute: CustomerLoginRoute,
+  ListingIdRoute: ListingIdRoute,
+  ManagementLoginRoute: ManagementLoginRoute,
+  OwnerLoginRoute: OwnerLoginRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiManagementExportListingsSplatRoute: ApiManagementExportListingsSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

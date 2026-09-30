@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Better Auth core tables
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  
+  // Relations to our custom tables
+  profile       Profile?
+  roles         UserRole[]
+  activityLogs  ActivityLog[]
+  favorites     Favorite[]
+  inquiries     Inquiry[]
+  notifications Notification[]
+  boardingHouses BoardingHouse[] // owned boarding houses
+  reviews       Review[]
+  reservations  Reservation[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// Domain Tables
+enum AppRole {
+  admin
+  owner
+  customer
+}
+
+enum InquiryStatus {
+  new
+  responded
+  closed
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  cancelled
+  expired
+}
+
+enum ListingStatus {
+  pending
+  approved
+  rejected
+}
+
+model Profile {
+  id         String   @id // matches User.id
+  fullName   String
+  email      String?
+  phone      String?
+  avatarUrl  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      AppRole
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_roles")
+}
+
+model BoardingHouse {
+  id                 String               @id @default(cuid())
+  ownerId            String?
+  name               String
+  description        String?
+  address            String
+  landmark           String?
+  contactNumber      String
+  monthlyFee         Float
+  numRooms           Int                  @default(0)
+  availableVacancies Int                  @default(0)
+  amenities          String[]             @default([])
+  coverPhotoUrl      String?
+  latitude           Float?
+  longitude          Float?
+  status             ListingStatus        @default(pending)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  owner              User?                @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  photos             BoardingHousePhoto[]
+  favorites          Favorite[]
+  inquiries          Inquiry[]
+  reviews            Review[]
+  reservations       Reservation[]
+
+  @@map("boarding_houses")
+}
+
+model BoardingHousePhoto {
+  id              String        @id @default(cuid())
+  boardingHouseId String
+  url             String
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now())
+
+  boardingHouse   BoardingHouse @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
+
+  @@map("boarding_house_photos")
+}
+
+model Favorite {
+  customerId      String
+  boardingHouseId String
+  createdAt       DateTime @default(now())
+
+  customer        User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  boardingHouse   BoardingHouse @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, boardingHouseId])
+  @@map("favorites")
+}
+
+model Inquiry {
+  id              String        @id @default(cuid())
+  customerId      String
+  boardingHouseId String
+  message         String
+  status          InquiryStatus @default(new)
+  createdAt       DateTime      @default(now())
+
+  customer        User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  boardingHouse   BoardingHouse @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
+
+  @@map("inquiries")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
+
+model Review {
+  id              String        @id @default(cuid())
+  customerId      String
+  boardingHouseId String
+  rating          Int           // 1–5
+  comment         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer        User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  boardingHouse   BoardingHouse @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, boardingHouseId])
+  @@map("reviews")
+}
+
+model Reservation {
+  id              String            @id @default(cuid())
+  boardingHouseId String
+  customerId      String
+  roomDeck        String?
+  price           Float?
+  status          ReservationStatus @default(pending)
+  expiresAt       DateTime
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  boardingHouse   BoardingHouse     @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
+  customer        User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("reservations")
+}

@@ -1,256 +1,171 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, ShieldCheck, Clock, ArrowRight, BedDouble, Users } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Building2, Users, Search, ShieldCheck, MapPin, ArrowRight, UserCircle, Home, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { BoardingHouseCard } from "@/components/boarding-house-card";
-import heroImg from "@/assets/hero-boarding.jpg";
-import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Boarding House Vacancy Tracker — ZDSPGC-Dimataling" },
-      {
-        name: "description",
-        content:
-          "Find vacant boarding houses near ZDSPGC-Dimataling Campus. Browse photos, compare rent, and contact owners directly — updated in real time.",
-      },
-      { property: "og:title", content: "Boarding House Vacancy Tracker — ZDSPGC-Dimataling" },
-      {
-        property: "og:description",
-        content:
-          "Real-time vacancy listings for boarding houses near ZDSPGC-Dimataling Campus.",
-      },
+      { title: "Boarding House Vacancy Tracker" },
+      { name: "description", content: "Find the perfect boarding house near your campus quickly and securely." },
     ],
   }),
-  component: Landing,
+  component: LandingPage,
 });
 
-function Landing() {
-  const navigate = useNavigate();
-  const [q, setQ] = useState("");
-
-  const { data: featured = [] } = useQuery({
-    queryKey: ["featured-boarding-houses"],
-    queryFn: async () => {
-      const { data: houses } = await supabase
-        .from("boarding_houses")
-        .select("*")
-        .eq("approval", "approved")
-        .order("created_at", { ascending: false })
-        .limit(6);
-      if (!houses?.length) return [];
-      const ids = houses.map((h) => h.id);
-      const { data: rooms } = await supabase
-        .from("rooms")
-        .select("boarding_house_id,status,monthly_rent")
-        .in("boarding_house_id", ids);
-      return houses.map((h) => {
-        const list = (rooms ?? []).filter((r) => r.boarding_house_id === h.id);
-        const vacant = list.filter((r) => r.status === "vacant").length;
-        const min = list.length ? Math.min(...list.map((r) => Number(r.monthly_rent))) : null;
-        return { house: h, vacant, total: list.length, min };
-      });
-    },
-  });
-
-  const { data: stats } = useQuery({
-    queryKey: ["landing-stats"],
-    queryFn: async () => {
-      const [houses, vacant] = await Promise.all([
-        supabase.from("boarding_houses").select("id", { count: "exact", head: true }).eq("approval", "approved"),
-        supabase.from("rooms").select("id", { count: "exact", head: true }).eq("status", "vacant"),
-      ]);
-      return { houses: houses.count ?? 0, vacant: vacant.count ?? 0 };
-    },
-  });
-
-  const onSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate({ to: "/browse", search: { q: q || undefined } as never });
-  };
-
+function LandingPage() {
   return (
-    <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImg} alt="" width={1536} height={1024} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/40" />
-        </div>
-        <div className="container relative mx-auto px-4 py-20 md:py-32">
-          <div className="max-w-2xl text-primary-foreground">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-warm/20 px-3 py-1 text-xs font-medium uppercase tracking-wider backdrop-blur">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-accent" /> Live vacancy updates
+    <div className="min-h-screen bg-background font-sans text-foreground">
+      {/* Header Navigation */}
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-md">
+            <Home className="h-7 w-7" />
+            <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 border-2 border-background">
+              <Check className="h-3 w-3 text-white stroke-[3]" />
             </div>
-            <h1 className="font-display text-4xl font-extrabold leading-tight md:text-6xl">
-              Find your boarding house near{" "}
-              <span className="text-accent">ZDSPGC-Dimataling</span>
-            </h1>
-            <p className="mt-4 text-lg text-primary-foreground/90 md:text-xl">
-              Browse approved boarding houses, compare rooms and rent, and reach owners directly — all from one place.
-            </p>
-
-            <form
-              onSubmit={onSearch}
-              className="mt-8 flex max-w-xl gap-2 rounded-2xl bg-background/95 p-2 shadow-elegant backdrop-blur"
-            >
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search by name, address, or landmark"
-                  className="border-0 bg-transparent pl-9 text-foreground focus-visible:ring-0"
-                />
-              </div>
-              <Button type="submit" size="lg" className="shrink-0">
-                Search <ArrowRight className="ml-1 h-4 w-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-bold leading-tight text-slate-900 dark:text-white">Boarding House</span>
+            <span className="text-emerald-700 font-medium leading-tight dark:text-emerald-500">Vacancy Tracker</span>
+            <span className="text-[10px] text-muted-foreground mt-0.5">ZDSPGC – Dimataling Campus</span>
+          </div>
+        </div>
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+          <Link to="/browse" className="text-muted-foreground transition-colors hover:text-primary">
+            Browse Listings
+          </Link>
+          <Link to="/owner/login" className="text-muted-foreground transition-colors hover:text-primary">
+            For Owners
+          </Link>
+        </nav>
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="hidden sm:flex gap-2">
+                <UserCircle className="h-4 w-4" /> Sign In
               </Button>
-            </form>
-
-            <div className="mt-8 grid grid-cols-3 gap-6 text-primary-foreground">
-              <Stat label="Approved listings" value={stats?.houses ?? 0} />
-              <Stat label="Vacant rooms" value={stats?.vacant ?? 0} />
-              <Stat label="Updated" value="Live" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="container mx-auto grid gap-6 px-4 py-16 md:grid-cols-3">
-        <Feature
-          icon={<ShieldCheck className="h-6 w-6" />}
-          title="Verified listings"
-          body="Every boarding house and owner is reviewed by campus administrators before going live."
-        />
-        <Feature
-          icon={<Clock className="h-6 w-6" />}
-          title="Real-time vacancy"
-          body="Owners update room status instantly so you never travel for a room that's already taken."
-        />
-        <Feature
-          icon={<MapPin className="h-6 w-6" />}
-          title="Near the campus"
-          body="Filter by distance from ZDSPGC-Dimataling — by meters or kilometers, walking or short ride."
-        />
-      </section>
-
-      {/* Featured */}
-      <section className="bg-gradient-warm py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <h2 className="font-display text-3xl font-bold md:text-4xl">Featured boarding houses</h2>
-              <p className="mt-2 text-muted-foreground">Recently added and approved by admins.</p>
-            </div>
-            <Button asChild variant="outline">
-              <Link to="/browse">
-                See all <ArrowRight className="ml-1 h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <Link to="/customer/login" className="w-full block">
+                <DropdownMenuItem className="cursor-pointer gap-2">
+                  <Users className="h-4 w-4" /> Student/Employee
+                </DropdownMenuItem>
               </Link>
+              <Link to="/owner/login" className="w-full block">
+                <DropdownMenuItem className="cursor-pointer gap-2">
+                  <Building2 className="h-4 w-4" /> Owner
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Link to="/browse">
+            <Button className="gap-2 shadow-md hover:shadow-lg transition-all">
+              Find a Room <ArrowRight className="h-4 w-4" />
             </Button>
-          </div>
+          </Link>
+        </div>
+      </header>
 
-          {featured.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-muted-foreground">
-              <BedDouble className="mx-auto mb-3 h-10 w-10 opacity-40" />
-              No listings yet. Be the first owner to register and post a boarding house.
-              <div className="mt-4">
-                <Button asChild>
-                  <Link to="/auth" search={{ mode: "signup", role: "owner" } as never}>
-                    Register as owner
-                  </Link>
-                </Button>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-24 pb-32">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
+            <div className="flex flex-col justify-center space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              <div className="space-y-4">
+                <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                  Smart Campus Living
+                </div>
+                <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl xl:text-7xl">
+                  Find Your Perfect <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">
+                    Home Away
+                  </span>
+                </h1>
+                <p className="max-w-[600px] text-lg text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Discover top-rated boarding houses, check real-time vacancy statuses, and secure your room effortlessly. The ultimate tool for students and landlords.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link to="/browse" className="flex-1 sm:flex-none">
+                  <Button size="lg" className="w-full gap-2 shadow-xl hover:shadow-primary/25 transition-all text-lg h-14 px-8">
+                    <Search className="h-5 w-5" /> Browse Now
+                  </Button>
+                </Link>
+                <Link to="/owner/login" className="flex-1 sm:flex-none">
+                  <Button size="lg" variant="outline" className="w-full text-lg h-14 px-8 border-primary/20 hover:bg-primary/5">
+                    List Your Property
+                  </Button>
+                </Link>
               </div>
             </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((f) => (
-                <BoardingHouseCard
-                  key={f.house.id}
-                  house={f.house}
-                  vacantRooms={f.vacant}
-                  totalRooms={f.total}
-                  minRent={f.min}
+            <div className="mx-auto flex w-full max-w-[500px] items-center justify-center lg:max-w-none animate-in fade-in slide-in-from-right-8 duration-1000 delay-200 fill-mode-both">
+              <div className="relative aspect-square w-full rounded-3xl overflow-hidden shadow-2xl border border-border/50 bg-card p-2">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent z-10 pointer-events-none rounded-3xl"></div>
+                <img
+                  src="/hero-realistic.png"
+                  alt="Realistic Philippine boarding house"
+                  className="h-full w-full object-cover rounded-2xl"
                 />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* CTA for owners */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="overflow-hidden rounded-3xl bg-gradient-hero p-8 md:p-12">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div className="text-primary-foreground">
-              <h2 className="font-display text-3xl font-bold md:text-4xl">
-                Own a boarding house?
-              </h2>
-              <p className="mt-3 text-primary-foreground/85">
-                List your property, manage rooms, and reach students directly. Free to join — admins approve new owners.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button asChild size="lg" variant="secondary">
-                  <Link to="/auth" search={{ mode: "signup", role: "owner" } as never}>
-                    Register as owner
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10">
-                  <Link to="/about">Learn more</Link>
-                </Button>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-primary-foreground">
-              <FeatureMini icon={<BedDouble className="h-5 w-5" />} label="Add unlimited rooms" />
-              <FeatureMini icon={<Users className="h-5 w-5" />} label="Get inquiries" />
-              <FeatureMini icon={<ShieldCheck className="h-5 w-5" />} label="Verified owner badge" />
-              <FeatureMini icon={<Clock className="h-5 w-5" />} label="Instant vacancy toggle" />
             </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-border bg-card py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Boarding House Vacancy Tracker · ZDSPGC-Dimataling Campus
+      {/* Features Section */}
+      <section className="py-24 bg-card">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="mb-16 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Why Choose CampusFinder?</h2>
+            <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground text-lg">
+              We streamline the search process for students and provide powerful tools for property owners to manage their vacancies.
+            </p>
+          </div>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: MapPin,
+                title: "Location-Based Search",
+                desc: "Find boarding houses situated perfectly around your campus with precise location tracking and maps.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Verified Listings",
+                desc: "All property owners and listings go through an approval process to ensure safety and quality.",
+              },
+              {
+                icon: Building2,
+                title: "Real-Time Vacancy",
+                desc: "No more dead ends. See exactly how many rooms are available before you even inquire.",
+              },
+            ].map((feature, idx) => (
+              <div 
+                key={idx} 
+                className="group relative overflow-hidden rounded-2xl border border-border bg-background p-8 shadow-sm transition-all hover:shadow-md hover:border-primary/30"
+              >
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
+                  <feature.icon className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-background py-12 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
+          <p>© {new Date().getFullYear()} CampusFinder Vacancy Tracker. All rights reserved.</p>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div>
-      <div className="font-display text-3xl font-extrabold">{value}</div>
-      <div className="text-xs uppercase tracking-wider text-primary-foreground/80">{label}</div>
-    </div>
-  );
-}
-
-function Feature({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-      <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <h3 className="font-display text-lg font-bold">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-    </div>
-  );
-}
-
-function FeatureMini({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl bg-primary-foreground/10 p-3 backdrop-blur">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-foreground/15">
-        {icon}
-      </div>
-      <span className="text-sm font-medium">{label}</span>
     </div>
   );
 }

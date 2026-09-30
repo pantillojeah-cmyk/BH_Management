@@ -1,0 +1,220 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { Building2, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import { z } from "zod";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { updateProfile } from "@/lib/server-fns";
+
+export const Route = createFileRoute("/owner_/login")({
+  head: () => ({ meta: [{ title: "Owner Portal — Boarding House Tracker" }] }),
+  component: OwnerAuthPage,
+});
+
+const emailSchema = z.string().trim().email("Invalid email").max(255);
+const passSchema = z.string().min(6, "Password must be at least 6 characters").max(72);
+const nameSchema = z.string().trim().min(2, "Enter your full name").max(100);
+
+function OwnerAuthPage() {
+  const navigate = useNavigate();
+  const { user, role } = useAuth();
+
+  useEffect(() => {
+    if (user && role) {
+      if (role === "admin") navigate({ to: "/management" });
+      else if (role === "owner") navigate({ to: "/owner" });
+      else navigate({ to: "/browse" });
+    }
+  }, [user, role, navigate]);
+
+  return (
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="hidden bg-gradient-to-br from-indigo-700 to-indigo-900 p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+        <div className="flex items-center gap-2">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/15">
+            <KeyRound className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-semibold">BH Vacancy Tracker</div>
+            <div className="text-xs opacity-80">Owner Portal</div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <h2 className="text-3xl font-bold">Manage your boarding house with ease.</h2>
+          <p className="opacity-90">Reach more students, manage vacancies in real-time, and handle inquiries securely from one dashboard.</p>
+          <ul className="space-y-2 text-sm opacity-90">
+            <li>• List your rooms for free</li>
+            <li>• Instantly update your vacancy counts</li>
+            <li>• Receive and reply to direct messages</li>
+          </ul>
+        </div>
+        <div className="text-xs opacity-70">For verified boarding house owners near ZDSPGC-Dimataling.</div>
+      </div>
+
+      <div className="flex items-center justify-center p-6 bg-slate-50">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+          <div className="mb-6 text-center lg:hidden">
+            <h1 className="text-2xl font-bold text-slate-900">Owner Portal</h1>
+            <p className="text-sm text-slate-500">Manage your boarding house</p>
+          </div>
+          <Tabs defaultValue="signin">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Register</TabsTrigger>
+            </TabsList>
+            <TabsContent value="signin"><SignInForm /></TabsContent>
+            <TabsContent value="signup"><SignUpForm /></TabsContent>
+          </Tabs>
+          <div className="flex items-center mb-4 cursor-pointer text-indigo-400 hover:underline" onClick={() => navigate({ to: '/' })}>
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Back to Home
+          </div>
+          <div className="mt-6 text-center text-xs text-slate-500">
+            Return to <a href="/" className="text-indigo-400 hover:underline">main site</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SignInForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      emailSchema.parse(email);
+      passSchema.parse(password);
+    } catch (err) {
+      if (err instanceof z.ZodError) { toast.error(err.issues[0].message); return; }
+    }
+    setBusy(true);
+    const { error } = await authClient.signIn.email({ email, password });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Signed in");
+      setEmail("");
+      setPassword("");
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="mt-6 space-y-4">
+      <div>
+        <Label htmlFor="si-email">Email</Label>
+        <Input id="si-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@example.com" required autoComplete="off" />
+      </div>
+      <div>
+        <Label htmlFor="si-pass">Password</Label>
+        <div className="relative">
+          <Input
+            id="si-pass"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pr-10"
+            required
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+      <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
+    </form>
+  );
+}
+
+function SignUpForm() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      nameSchema.parse(fullName);
+      emailSchema.parse(email);
+      passSchema.parse(password);
+    } catch (err) {
+      if (err instanceof z.ZodError) { toast.error(err.issues[0].message); return; }
+    }
+    setBusy(true);
+    const { data, error } = await authClient.signUp.email({ email, password, name: fullName });
+    if (error) { toast.error(error.message); setBusy(false); return; }
+    
+    if (data?.user) {
+      await updateProfile({ data: { userId: data.user.id, fullName, phone: phone || null } });
+      await fetch("/api/user-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: data.user.id, role: "owner" }),
+      });
+    }
+    setBusy(false);
+    toast.success("Owner account created — you're signed in.");
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setPassword("");
+  };
+
+  return (
+    <form onSubmit={submit} className="mt-6 space-y-4">
+      <div>
+        <Label htmlFor="su-name">Full name</Label>
+        <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+      </div>
+      <div>
+        <Label htmlFor="su-email">Email</Label>
+        <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </div>
+      <div>
+        <Label htmlFor="su-phone">Phone (optional)</Label>
+        <Input id="su-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9xx xxx xxxx" />
+      </div>
+      <div>
+        <Label htmlFor="su-pass">Password</Label>
+        <div className="relative">
+          <Input
+            id="su-pass"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pr-10"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+      <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={busy}>{busy ? "Creating…" : "Create owner account"}</Button>
+    </form>
+  );
+}

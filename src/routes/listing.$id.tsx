@@ -1,0 +1,812 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  Phone, MapPin, Bed, Heart, MessageSquare, ArrowLeft, Star,
+  ChevronLeft, ChevronRight, CalendarCheck, Clock, BedDouble, Lock, CheckCircle2, Maximize2
+} from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { peso, vacancyState, toneClass } from "@/lib/format";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
+import {
+  getListingById, getUserFavorites, toggleFavorite, sendInquiry,
+  submitReview, getMyReview, createReservation, getActiveReservationForListing,
+  cancelReservation, getConfirmedReservationForListing, getListingRoomReservations
+} from "@/lib/server-fns";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
+
+export const Route = createFileRoute("/listing/$id")({
+  component: ListingDetail,
+});
+
+interface BH {
+  id: string; owner_id: string | null; name: string; address: string; landmark: string | null;
+  contact_number: string; description: string | null; monthly_fee: number; num_rooms: number;
+  available_vacancies: number; amenities: string[]; cover_photo_url: string | null;
+  latitude?: number | null; longitude?: number | null;
+  avg_rating: number | null; review_count: number;
+}
+
+interface ReviewRow {
+  id: string; rating: number; comment: string | null; created_at: string;
+  customer_name: string; customer_id: string;
+}
+
+export interface RoomDeckItem {
+  index: number;
+  name: string;
+  isOccupied: boolean;
+  isReserved: boolean;
+  status: string;
+}
+
+// ── Image Carousel / Slideshow with Room Selection ─────────────────────────────
+function ImageCarousel({
+  images,
+  altText,
+  rooms,
+  current,
+  onChange,
+}: {
+  images: string[];
+  altText: string;
+  rooms: RoomDeckItem[];
+  current: number;
+  onChange: (index: number) => void;
+}) {
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const prev = useCallback(() => {
+    onChange(current === 0 ? images.length - 1 : current - 1);
+  }, [current, images.length, onChange]);
+
+  const next = useCallback(() => {
+    onChange(current === images.length - 1 ? 0 : current + 1);
+  }, [current, images.length, onChange]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [prev, next]);
+
+  if (images.length === 0) {
+    return (
+      <div className="relative aspect-[16/9] bg-muted rounded-2xl border border-border overflow-hidden">
+        <div className="grid h-full w-full place-items-center text-muted-foreground">No photo</div>
+      </div>
+    );
+  }
+
+  const activeRoom = rooms[current] || {
+    name: `Room ${Math.floor(current / 2) + 1} - ${current % 2 === 0 ? "Lower Deck" : "Upper Deck"}`,
+    isOccupied: false,
+    status: "Available",
+  };
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      {/* Main image with arrows and room indicator */}
+      <div
+        className="relative aspect-[16/9] bg-muted group select-none cursor-pointer"
+        onClick={() => setIsViewerOpen(true)}
+      >
+        <img
+          src={images[current]}
+          alt={`${altText} - ${activeRoom.name}`}
+          className={`h-full w-full object-cover transition-all duration-300 ${
+            activeRoom.isOccupied ? "brightness-75 contrast-90" : ""
+          }`}
+        />
+
+        {/* Visual Highlight Ring for Selected Room */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
+            activeRoom.isOccupied
+              ? "ring-4 ring-rose-500/80 ring-inset bg-rose-950/20"
+              : "ring-4 ring-emerald-500 ring-inset bg-emerald-950/10"
+          }`}
+        />
+
+        {/* Full screen View Icon Overlay */}
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-10">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/75 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md shadow-lg border border-white/20">
+            <Maximize2 className="h-4 w-4 text-emerald-400" />
+            Click to View Full Screen
+          </span>
+        </div>
+
+        {/* Left arrow ‹ */}
+        {images.length > 1 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
+            }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-all hover:bg-black/85 hover:scale-110 z-20"
+            aria-label="Previous room photo"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+        )}
+
+        {/* Right arrow › */}
+        {images.length > 1 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-all hover:bg-black/85 hover:scale-110 z-20"
+            aria-label="Next room photo"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        )}
+
+        {/* Selected Room Overlay Badge */}
+        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
+          <span className={`inline-flex items-center gap-1.5 rounded-full text-white border px-3 py-1 text-xs sm:text-sm font-semibold backdrop-blur-md shadow-lg ${
+            activeRoom.isOccupied
+              ? "bg-rose-950/90 border-rose-400/30 text-rose-200"
+              : "bg-slate-900/90 border-emerald-400/40 text-emerald-300"
+          }`}>
+            <BedDouble className="h-4 w-4 text-emerald-400" />
+            <span>Selected Unit: {activeRoom.name}</span>
+          </span>
+        </div>
+
+        {/* Status Badge */}
+        <div className="absolute top-3 right-3 z-20">
+          {activeRoom.isOccupied ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600/95 text-white border border-rose-300/40 px-3 py-1 text-xs font-bold backdrop-blur-md shadow-lg">
+              <Lock className="h-3.5 w-3.5" />
+              {activeRoom.status}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white border border-emerald-300/40 px-3 py-1 text-xs font-bold backdrop-blur-md shadow-lg">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Available to Reserve
+            </span>
+          )}
+        </div>
+
+        {/* Counter badge */}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm z-20">
+            {current + 1} / {images.length}
+          </div>
+        )}
+      </div>
+
+      {/* Room Selection Pills */}
+      {rooms.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto p-3 bg-muted/40 border-t border-b border-border scrollbar-none">
+          {rooms.map((r, i) => (
+            <button
+              key={r.name}
+              type="button"
+              onClick={() => {
+                onChange(i);
+                if (r.isOccupied) {
+                  toast.error(`"${r.name}" is already occupied or reserved.`);
+                } else {
+                  toast.success(`Selected "${r.name}"`);
+                }
+              }}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                i === current
+                  ? r.isOccupied
+                    ? "bg-rose-600 text-white shadow scale-105"
+                    : "bg-emerald-600 text-white shadow scale-105"
+                  : r.isOccupied
+                  ? "bg-muted text-muted-foreground line-through opacity-70 hover:opacity-100"
+                  : "bg-background border border-border text-foreground hover:bg-accent"
+              }`}
+            >
+              <span>{r.name}</span>
+              {r.isOccupied && <span className="text-[10px] text-rose-200 font-normal">({r.status})</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Thumbnail strip */}
+      {images.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto p-3 scrollbar-thin">
+          {images.map((url, i) => {
+            const roomItem = rooms[i];
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  onChange(i);
+                  if (roomItem?.isOccupied) {
+                    toast.error(`"${roomItem.name}" is already occupied or reserved.`);
+                  } else {
+                    toast.success(`Selected "${roomItem?.name}"`);
+                  }
+                }}
+                className={`relative flex-shrink-0 overflow-hidden rounded-xl transition-all ${
+                  i === current
+                    ? roomItem?.isOccupied
+                      ? "ring-4 ring-rose-500 ring-offset-2 ring-offset-background scale-105"
+                      : "ring-4 ring-emerald-500 ring-offset-2 ring-offset-background scale-105"
+                    : "opacity-60 hover:opacity-100"
+                }`}
+                aria-label={`Select ${roomItem?.name || `Photo ${i + 1}`}`}
+              >
+                <img
+                  src={url}
+                  alt={`Thumbnail ${i + 1}`}
+                  className={`h-16 w-24 object-cover sm:h-20 sm:w-28 ${
+                    roomItem?.isOccupied ? "brightness-75 contrast-90" : ""
+                  }`}
+                />
+                <span className={`absolute bottom-1 left-1 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-xs font-semibold ${
+                  roomItem?.isOccupied ? "bg-rose-900/80" : "bg-black/75"
+                }`}>
+                  {roomItem?.name || `Unit ${i + 1}`}
+                </span>
+                {roomItem?.isOccupied && (
+                  <span className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5 shadow">
+                    <Lock className="h-2.5 w-2.5" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Full-Screen Image Viewer Modal */}
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        images={images}
+        currentIndex={current}
+        onIndexChange={onChange}
+        title={altText}
+        rooms={rooms}
+      />
+    </div>
+  );
+}
+
+// ── Star picker component ─────────────────────────────────────────────────────
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onChange(i)}
+          onMouseEnter={() => setHover(i)}
+          onMouseLeave={() => setHover(0)}
+          className="transition-transform hover:scale-110"
+          aria-label={`Rate ${i} star${i > 1 ? "s" : ""}`}
+        >
+          <Star
+            className={`h-6 w-6 ${
+              i <= (hover || value) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+            }`}
+          />
+        </button>
+      ))}
+      {value > 0 && (
+        <span className="ml-2 self-center text-sm font-medium text-amber-600">
+          {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][value]}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Star display (read-only) ──────────────────────────────────────────────────
+function StarDisplay({ rating }: { rating: number }) {
+  return (
+    <div className="flex">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={`h-4 w-4 ${i <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/30"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+function ListingDetail() {
+  const { id } = Route.useParams();
+  const { user, role } = useAuth();
+  const navigate = useNavigate();
+  const [bh, setBh] = useState<BH | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [message, setMessage] = useState("");
+  const [isFav, setIsFav] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  // Selected room / photo index
+  const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
+  const [reservedRoomNames, setReservedRoomNames] = useState<Set<string>>(new Set());
+
+  // Review form state
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Reservation state
+  const [activeReservation, setActiveReservation] = useState<{ id: string; roomDeck?: string | null; price?: number | null; expiresAt: string } | null>(null);
+  const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [reserving, setReserving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [, setTick] = useState(0); // force re-render every second for countdown
+
+  const load = async () => {
+    const result = await getListingById({ data: { id } });
+    if (!result) { toast.error("Listing not found"); navigate({ to: "/browse" }); return; }
+    setBh(result.bh as BH);
+    setPhotos(result.photos.filter(Boolean));
+    setReviews(result.reviews as ReviewRow[]);
+  };
+
+  useEffect(() => { load(); }, [id]);
+
+  useEffect(() => {
+    getListingRoomReservations({ data: { boardingHouseId: id } })
+      .then((res) => {
+        const names = new Set<string>();
+        for (const r of res) {
+          if (r.roomDeck) names.add(r.roomDeck);
+        }
+        setReservedRoomNames(names);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  useEffect(() => {
+    if (!user) return;
+    getUserFavorites({ data: { userId: user.id } }).then((ids) => setIsFav(ids.includes(id)));
+    if (role === "customer") {
+      getMyReview({ data: { boardingHouseId: id, customerId: user.id } }).then((r) => {
+        if (r) { setMyRating(r.rating); setMyComment(r.comment ?? ""); }
+      });
+      getActiveReservationForListing({ data: { boardingHouseId: id, customerId: user.id } }).then(setActiveReservation);
+      getConfirmedReservationForListing({ data: { boardingHouseId: id, customerId: user.id } }).then(setHasConfirmed);
+    }
+  }, [user, id, role]);
+
+  // Countdown ticker
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const allPhotos = useMemo(() => {
+    const arr = [bh?.cover_photo_url, ...photos].filter(Boolean) as string[];
+    return Array.from(new Set(arr));
+  }, [bh?.cover_photo_url, photos]);
+
+  const rooms: RoomDeckItem[] = useMemo(() => {
+    const total = Math.max(allPhotos.length, 1);
+    const occupiedCount = Math.max(0, (bh?.num_rooms ?? 0) - (bh?.available_vacancies ?? 0));
+
+    return Array.from({ length: total }, (_, i) => {
+      const roomNum = Math.floor(i / 2) + 1;
+      const deck = i % 2 === 0 ? "Lower Deck" : "Upper Deck";
+      const name = total === 1 ? "Room 1 - Standard Unit" : `Room ${roomNum} - ${deck}`;
+      const isReserved = reservedRoomNames.has(name);
+      const isOccupied = isReserved || (occupiedCount > 0 && i >= (total - occupiedCount));
+
+      return {
+        index: i,
+        name,
+        isOccupied,
+        isReserved,
+        status: isReserved ? "Reserved" : isOccupied ? "Occupied" : "Available",
+      };
+    });
+  }, [allPhotos.length, bh?.num_rooms, bh?.available_vacancies, reservedRoomNames]);
+
+  const activeRoom = rooms[currentPhotoIdx] || rooms[0] || {
+    index: 0,
+    name: "Room 1 - Lower Deck",
+    isOccupied: false,
+    isReserved: false,
+    status: "Available",
+  };
+
+  const doReserve = async () => {
+    if (!user || role !== "customer") { toast.error("Sign in as customer to reserve"); return; }
+    if (!bh || bh.available_vacancies === 0) { toast.error("No vacancies available"); return; }
+    if (activeRoom.isOccupied) { toast.error(`"${activeRoom.name}" is already occupied or reserved.`); return; }
+
+    setReserving(true);
+    try {
+      const res = await createReservation({
+        data: {
+          boardingHouseId: id,
+          customerId: user.id,
+          roomDeck: activeRoom.name,
+          price: bh.monthly_fee,
+        },
+      });
+      setActiveReservation(res);
+      setReservedRoomNames((prev) => new Set([...prev, activeRoom.name]));
+      const exp = new Date(res.expiresAt);
+      toast.success(`Spot reserved for ${activeRoom.name}! Held until ${exp.toLocaleString()}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setReserving(false);
+    }
+  };
+
+  const doCancelReservation = async () => {
+    if (!activeReservation) return;
+    setCancelling(true);
+    try {
+      await cancelReservation({ data: { id: activeReservation.id } });
+      if (activeReservation.roomDeck) {
+        setReservedRoomNames((prev) => {
+          const next = new Set(prev);
+          next.delete(activeReservation.roomDeck!);
+          return next;
+        });
+      }
+      setActiveReservation(null);
+      toast.success("Reservation cancelled");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const getCountdown = (expiresAt: string) => {
+    const diff = Math.max(0, new Date(expiresAt).getTime() - Date.now());
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    if (diff === 0) return "Expired";
+    return `${h}h ${m}m ${s}s`;
+  };
+
+  const favToggle = async () => {
+    if (!user || role !== "customer") { toast.error("Sign in as customer to save favorites"); return; }
+    await toggleFavorite({ data: { userId: user.id, boardingHouseId: id, add: !isFav } });
+    setIsFav(!isFav);
+  };
+
+  const doSendInquiry = async () => {
+    if (!user) { toast.error("Sign in to send an inquiry"); return; }
+    if (role !== "customer") { toast.error("Only customers can send inquiries"); return; }
+    if (message.trim().length < 5) { toast.error("Message is too short"); return; }
+    if (message.length > 1000) { toast.error("Message must be under 1000 characters"); return; }
+    setSending(true);
+    try {
+      await sendInquiry({
+        data: { customerId: user.id, boardingHouseId: id, message: message.trim(), ownerId: bh?.owner_id ?? null, bhName: bh?.name ?? "" },
+      });
+      toast.success("Inquiry sent!"); setMessage("");
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSending(false); }
+  };
+
+  const doSubmitReview = async () => {
+    if (!user || role !== "customer") { toast.error("Sign in as customer to leave a review"); return; }
+    if (myRating === 0) { toast.error("Please select a star rating"); return; }
+    setSubmittingReview(true);
+    try {
+      await submitReview({ data: { boardingHouseId: id, customerId: user.id, rating: myRating, comment: myComment } });
+      toast.success("Review submitted!");
+      await load(); // refresh reviews and avg rating
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSubmittingReview(false); }
+  };
+
+  if (!bh) return <AppShell><div className="p-8 text-center text-muted-foreground">Loading…</div></AppShell>;
+  const state = vacancyState(bh.available_vacancies, bh.num_rooms);
+  const cover = bh.cover_photo_url;
+
+  return (
+    <AppShell>
+      <button onClick={() => history.back()} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* ── Left column ── */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Photos - Slideshow Carousel */}
+          <div className="relative">
+            <ImageCarousel
+              images={allPhotos}
+              altText={bh.name}
+              rooms={rooms}
+              current={currentPhotoIdx}
+              onChange={setCurrentPhotoIdx}
+            />
+            <span className={`absolute left-4 top-4 z-10 rounded-full border px-3 py-1 text-xs font-semibold ${toneClass[state.tone]}`}>{state.label}</span>
+          </div>
+
+          {/* Details */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h1 className="text-2xl font-bold text-foreground">{bh.name}</h1>
+
+            {/* Rating summary */}
+            {bh.avg_rating && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex">
+                  {[1,2,3,4,5].map((i) => (
+                    <Star key={i} className={`h-4 w-4 ${i <= Math.round(bh.avg_rating!) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/30"}`} />
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-amber-600">{bh.avg_rating.toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">({bh.review_count} review{bh.review_count !== 1 ? "s" : ""})</span>
+              </div>
+            )}
+
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" /> {bh.address}
+            </div>
+            {bh.landmark && <div className="text-xs text-muted-foreground">Landmark: {bh.landmark}</div>}
+            {bh.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{bh.description}</p>}
+
+            <div className="mt-6">
+              <div className="mb-2 text-sm font-semibold">Amenities</div>
+              <div className="flex flex-wrap gap-2">
+                {bh.amenities.map((a) => <span key={a} className="rounded-md bg-secondary px-3 py-1 text-xs text-secondary-foreground">{a}</span>)}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Location Map ── */}
+          {(() => {
+            const hasGps = typeof bh.latitude === "number" && typeof bh.longitude === "number" && !isNaN(bh.latitude) && !isNaN(bh.longitude);
+            
+            // Clean prepositional prefixes (e.g. "beside San Miguel ES" -> "San Miguel ES")
+            const cleanedLandmark = bh.landmark?.trim()
+              ? bh.landmark.trim().replace(/^(beside|near|behind|in front of|across|next to|along)\s+/i, "")
+              : null;
+
+            const mapSearchParts = [
+              cleanedLandmark,
+              bh.address,
+              !bh.address.toLowerCase().includes("dimataling") ? "Dimataling" : "",
+              !bh.address.toLowerCase().includes("zamboanga del sur") ? "Zamboanga del Sur" : "",
+              !bh.address.toLowerCase().includes("philippines") ? "Philippines" : "",
+            ].filter(Boolean);
+
+            const mapSearchQuery = mapSearchParts.join(", ");
+
+            const mapSrc = hasGps
+              ? `https://maps.google.com/maps?q=${bh.latitude},${bh.longitude}&hl=en&z=17&output=embed`
+              : `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&output=embed&z=16`;
+
+            const mapsLink = hasGps
+              ? `https://www.google.com/maps?q=${bh.latitude},${bh.longitude}`
+              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
+
+            return (
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-emerald-600" />
+                    <h2 className="text-base font-semibold">Location</h2>
+                    {hasGps && (
+                      <span className="rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 text-xs font-medium">
+                        GPS Verified
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+                  >
+                    Open in Google Maps ↗
+                  </a>
+                </div>
+                <iframe
+                  title="Boarding House Location"
+                  width="100%"
+                  height="340"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={mapSrc}
+                />
+              </div>
+            );
+          })()}
+
+          {/* ── Reviews section ── */}
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+            <h2 className="text-lg font-semibold">
+              Reviews
+              {bh.review_count > 0 && <span className="ml-2 text-sm font-normal text-muted-foreground">({bh.review_count})</span>}
+            </h2>
+
+            {/* Leave / edit review (customers only) */}
+            {role === "customer" && (
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                {hasConfirmed ? (
+                  <>
+                    <div className="text-sm font-medium">{myRating ? "Your review" : "Leave a review"}</div>
+                    <StarPicker value={myRating} onChange={setMyRating} />
+                    <Textarea
+                      value={myComment}
+                      onChange={(e) => setMyComment(e.target.value)}
+                      placeholder="Share your experience (optional)"
+                      rows={3}
+                      maxLength={500}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{myComment.length}/500</span>
+                      <Button size="sm" onClick={doSubmitReview} disabled={submittingReview || myRating === 0}>
+                        {submittingReview ? "Saving…" : myRating ? "Update review" : "Submit review"}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-2">
+                    You must have a confirmed reservation to leave a review.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reviews list */}
+            {reviews.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                No reviews yet. Be the first to review this boarding house!
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((r) => (
+                  <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {r.customer_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">{r.customer_name}</div>
+                          <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <StarDisplay rating={r.rating} />
+                    </div>
+                    {r.comment && <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{r.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Sidebar ── */}
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="text-2xl font-bold text-primary">{peso(bh.monthly_fee)}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+            <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
+              <Bed className="h-4 w-4" /> {bh.available_vacancies} of {bh.num_rooms} rooms vacant
+            </div>
+            <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
+              <Phone className="h-4 w-4" /> <a href={`tel:${bh.contact_number}`} className="text-primary hover:underline">{bh.contact_number}</a>
+            </div>
+            {bh.avg_rating && (
+              <div className="mt-3 flex items-center gap-1.5 text-sm">
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                <span className="font-semibold text-amber-600">{bh.avg_rating.toFixed(1)}</span>
+                <span className="text-muted-foreground">/ 5 · {bh.review_count} review{bh.review_count !== 1 ? "s" : ""}</span>
+              </div>
+            )}
+            <Button variant="outline" className="mt-4 w-full" onClick={favToggle}>
+              <Heart className={`mr-2 h-4 w-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} /> {isFav ? "Saved" : "Save"}
+            </Button>
+          </div>
+
+          {/* ── Selected Room & Reservation ── */}
+          {role === "customer" && (
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="mb-3 flex items-center justify-between font-semibold">
+                <div className="flex items-center gap-2">
+                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Room Selection & Reservation
+                </div>
+              </div>
+
+              {/* Selected Room Details */}
+              <div className="mb-4 rounded-xl border border-border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">Selected Photo / Unit:</div>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                    <BedDouble className="h-4 w-4 text-primary" />
+                    {activeRoom.name}
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                      activeRoom.isOccupied
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                    }`}
+                  >
+                    {activeRoom.status}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1.5 flex items-center justify-between">
+                  <span>Monthly Rate:</span>
+                  <span className="font-semibold text-foreground">{peso(bh.monthly_fee)}</span>
+                </div>
+              </div>
+
+              {activeReservation ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3">
+                    <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Your Active Reservation</div>
+                    {activeReservation.roomDeck && (
+                      <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">
+                        {activeReservation.roomDeck}
+                      </div>
+                    )}
+                    <div className="mt-1 flex items-center gap-1.5 text-sm text-emerald-800 dark:text-emerald-300">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span className="font-mono font-semibold">{getCountdown(activeReservation.expiresAt)}</span> remaining
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      Expires {new Date(activeReservation.expiresAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={doCancelReservation} disabled={cancelling}>
+                    {cancelling ? "Cancelling…" : "Cancel Reservation"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Hold this specific unit for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
+                  <Button
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={doReserve}
+                    disabled={reserving || bh.available_vacancies === 0 || activeRoom.isOccupied}
+                  >
+                    <CalendarCheck className="mr-2 h-4 w-4" />
+                    {reserving
+                      ? "Reserving…"
+                      : activeRoom.isOccupied
+                      ? `${activeRoom.name} (${activeRoom.status})`
+                      : bh.available_vacancies === 0
+                      ? "No Vacancies"
+                      : `Reserve ${activeRoom.name}`}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="mb-2 flex items-center gap-2 font-semibold"><MessageSquare className="h-4 w-4" /> Send an inquiry</div>
+            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1000} placeholder="Hi! Is the room still available?" rows={4} />
+            <div className="mt-1 text-right text-[11px] text-muted-foreground">{message.length}/1000</div>
+            <Button onClick={doSendInquiry} disabled={sending} className="mt-2 w-full">{sending ? "Sending…" : "Send inquiry"}</Button>
+          </div>
+        </aside>
+      </div>
+    </AppShell>
+  );
+}
