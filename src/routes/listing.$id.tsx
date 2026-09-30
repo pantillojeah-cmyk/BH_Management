@@ -91,7 +91,7 @@ function ImageCarousel({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+    <div className="glass-card overflow-hidden rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl shadow-lg">
       {/* Main image with arrows and room indicator */}
       <div
         className="relative aspect-[16/9] bg-muted group select-none cursor-pointer"
@@ -544,7 +544,7 @@ function ListingDetail() {
           </div>
 
           {/* Details */}
-          <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 sm:p-8 shadow-sm">
             <h1 className="text-2xl font-bold text-foreground">{bh.name}</h1>
 
             {/* Rating summary */}
@@ -561,15 +561,19 @@ function ListingDetail() {
             )}
 
             <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" /> {bh.address}
+              <MapPin className="h-4 w-4 text-emerald-600" /> {bh.address}
             </div>
             {bh.landmark && <div className="text-xs text-muted-foreground">Landmark: {bh.landmark}</div>}
-            {bh.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{bh.description}</p>}
+            {bh.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{bh.description}</p>}
 
             <div className="mt-6">
-              <div className="mb-2 text-sm font-semibold">Amenities</div>
+              <div className="mb-2.5 text-sm font-semibold">Amenities</div>
               <div className="flex flex-wrap gap-2">
-                {bh.amenities.map((a) => <span key={a} className="rounded-md bg-secondary px-3 py-1 text-xs text-secondary-foreground">{a}</span>)}
+                {bh.amenities.map((a) => (
+                  <span key={a} className="rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-white/50 dark:border-white/10 px-3 py-1 text-xs text-foreground font-medium shadow-xs">
+                    {a}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -602,8 +606,8 @@ function ListingDetail() {
               : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
 
             return (
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-b border-border">
+              <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl overflow-hidden shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-b border-white/50 dark:border-white/10">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-emerald-600" />
                     <h2 className="text-base font-semibold">Location</h2>
@@ -637,15 +641,16 @@ function ListingDetail() {
           })()}
 
           {/* ── Reviews section ── */}
-          <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
-            <h2 className="text-lg font-semibold">
+          {/* ── Reviews section ── */}
+          <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 sm:p-8 space-y-5 shadow-sm">
+            <h2 className="text-lg font-bold">
               Reviews
               {bh.review_count > 0 && <span className="ml-2 text-sm font-normal text-muted-foreground">({bh.review_count})</span>}
             </h2>
 
             {/* Leave / edit review (customers only) */}
             {role === "customer" && (
-              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+              <div className="rounded-2xl border border-white/50 dark:border-white/10 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md p-4 space-y-3">
                 {hasConfirmed ? (
                   <>
                     <div className="text-sm font-medium">{myRating ? "Your review" : "Leave a review"}</div>
@@ -656,10 +661,11 @@ function ListingDetail() {
                       placeholder="Share your experience (optional)"
                       rows={3}
                       maxLength={500}
+                      className="rounded-xl border-white/40 dark:border-white/10 bg-white/60 dark:bg-slate-900/60"
                     />
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">{myComment.length}/500</span>
-                      <Button size="sm" onClick={doSubmitReview} disabled={submittingReview || myRating === 0}>
+                      <Button size="sm" onClick={doSubmitReview} disabled={submittingReview || myRating === 0} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
                         {submittingReview ? "Saving…" : myRating ? "Update review" : "Submit review"}
                       </Button>
                     </div>
@@ -674,20 +680,20 @@ function ListingDetail() {
 
             {/* Reviews list */}
             {reviews.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-white/50 dark:border-white/10 p-8 text-center text-sm text-muted-foreground">
                 No reviews yet. Be the first to review this boarding house!
               </div>
             ) : (
               <div className="space-y-4">
                 {reviews.map((r) => (
-                  <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                  <div key={r.id} className="border-b border-white/40 dark:border-white/10 pb-4 last:border-0 last:pb-0">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300">
                           {r.customer_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium">{r.customer_name}</div>
+                          <div className="text-sm font-semibold">{r.customer_name}</div>
                           <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</div>
                         </div>
                       </div>
@@ -702,14 +708,18 @@ function ListingDetail() {
         </div>
 
         {/* ── Sidebar ── */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="text-2xl font-bold text-primary">{peso(bh.monthly_fee)}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
-            <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
-              <Bed className="h-4 w-4" /> {bh.available_vacancies} of {bh.num_rooms} rooms vacant
+        <aside className="space-y-5">
+          <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 shadow-sm">
+            <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              {peso(bh.monthly_fee)}
+              <span className="text-xs font-normal text-muted-foreground">/month</span>
             </div>
-            <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
-              <Phone className="h-4 w-4" /> <a href={`tel:${bh.contact_number}`} className="text-primary hover:underline">{bh.contact_number}</a>
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <Bed className="h-4 w-4 text-emerald-600" />
+              <span className="font-medium text-foreground">{bh.available_vacancies} of {bh.num_rooms}</span> rooms vacant
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Phone className="h-4 w-4 text-emerald-600" /> <a href={`tel:${bh.contact_number}`} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">{bh.contact_number}</a>
             </div>
             {bh.avg_rating && (
               <div className="mt-3 flex items-center gap-1.5 text-sm">
@@ -718,70 +728,74 @@ function ListingDetail() {
                 <span className="text-muted-foreground">/ 5 · {bh.review_count} review{bh.review_count !== 1 ? "s" : ""}</span>
               </div>
             )}
-            <Button variant="outline" className="mt-4 w-full" onClick={favToggle}>
-              <Heart className={`mr-2 h-4 w-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} /> {isFav ? "Saved" : "Save"}
+            <Button
+              variant="outline"
+              className="mt-5 w-full rounded-xl border-white/60 dark:border-white/15 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md hover:bg-white/80"
+              onClick={favToggle}
+            >
+              <Heart className={`mr-2 h-4 w-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} /> {isFav ? "Saved to Favorites" : "Save to Favorites"}
             </Button>
           </div>
 
           {/* ── Selected Room & Reservation ── */}
           {role === "customer" && (
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <div className="mb-3 flex items-center justify-between font-semibold">
+            <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 shadow-sm">
+              <div className="mb-3 flex items-center justify-between font-bold text-sm">
                 <div className="flex items-center gap-2">
-                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Room Selection & Reservation
+                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Room Selection & Hold
                 </div>
               </div>
 
               {/* Selected Room Details */}
-              <div className="mb-4 rounded-xl border border-border bg-muted/30 p-3">
+              <div className="mb-4 rounded-2xl border border-white/50 dark:border-white/10 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md p-3.5">
                 <div className="text-xs text-muted-foreground">Selected Photo / Unit:</div>
                 <div className="flex items-center justify-between mt-1">
                   <div className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                    <BedDouble className="h-4 w-4 text-primary" />
+                    <BedDouble className="h-4 w-4 text-emerald-600" />
                     {activeRoom.name}
                   </div>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-xs ${
                       activeRoom.isOccupied
-                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
-                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40"
+                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40"
                     }`}
                   >
                     {activeRoom.status}
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1.5 flex items-center justify-between">
+                <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between pt-1 border-t border-white/40 dark:border-white/5">
                   <span>Monthly Rate:</span>
-                  <span className="font-semibold text-foreground">{peso(bh.monthly_fee)}</span>
+                  <span className="font-bold text-foreground">{peso(bh.monthly_fee)}</span>
                 </div>
               </div>
 
               {activeReservation ? (
                 <div className="space-y-3">
-                  <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3">
-                    <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Your Active Reservation</div>
+                  <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-3.5 backdrop-blur-md">
+                    <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Your Active Spot Hold</div>
                     {activeReservation.roomDeck && (
-                      <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">
+                      <div className="text-xs font-bold text-foreground mt-0.5">
                         {activeReservation.roomDeck}
                       </div>
                     )}
-                    <div className="mt-1 flex items-center gap-1.5 text-sm text-emerald-800 dark:text-emerald-300">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span className="font-mono font-semibold">{getCountdown(activeReservation.expiresAt)}</span> remaining
+                    <div className="mt-1 flex items-center gap-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                      <Clock className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
+                      <span className="font-mono">{getCountdown(activeReservation.expiresAt)}</span> remaining
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       Expires {new Date(activeReservation.expiresAt).toLocaleString()}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={doCancelReservation} disabled={cancelling}>
+                  <Button variant="outline" size="sm" className="w-full rounded-xl text-rose-600 hover:text-rose-700 border-rose-200 dark:border-rose-900/30" onClick={doCancelReservation} disabled={cancelling}>
                     {cancelling ? "Cancelling…" : "Cancel Reservation"}
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Hold this specific unit for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground leading-relaxed">Hold this specific unit for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
                   <Button
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold shadow-md shadow-emerald-600/20 border border-white/20 transition-all hover:scale-[1.01]"
                     onClick={doReserve}
                     disabled={reserving || bh.available_vacancies === 0 || activeRoom.isOccupied}
                   >
@@ -799,11 +813,24 @@ function ListingDetail() {
             </div>
           )}
 
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="mb-2 flex items-center gap-2 font-semibold"><MessageSquare className="h-4 w-4" /> Send an inquiry</div>
-            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1000} placeholder="Hi! Is the room still available?" rows={4} />
+          <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 shadow-sm">
+            <div className="mb-2 flex items-center gap-2 font-bold text-sm"><MessageSquare className="h-4 w-4 text-emerald-600" /> Send an inquiry</div>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              maxLength={1000}
+              placeholder="Hi! Is the room still available?"
+              rows={4}
+              className="rounded-xl border-white/50 dark:border-white/10 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm"
+            />
             <div className="mt-1 text-right text-[11px] text-muted-foreground">{message.length}/1000</div>
-            <Button onClick={doSendInquiry} disabled={sending} className="mt-2 w-full">{sending ? "Sending…" : "Send inquiry"}</Button>
+            <Button
+              onClick={doSendInquiry}
+              disabled={sending}
+              className="mt-3 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-semibold"
+            >
+              {sending ? "Sending…" : "Send Inquiry"}
+            </Button>
           </div>
         </aside>
       </div>

@@ -44,17 +44,24 @@ function OwnerPage() {
   return (
     <AppShell>
       <div className="mb-6 flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold">Owner Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Manage your boarding house listings and inquiries</p>
+        <div className="flex items-center gap-3.5">
+          <img
+            src="/logo.png"
+            alt="ZDSPGC BH Tracker Logo"
+            className="h-12 w-12 rounded-full object-cover border-2 border-primary/30 shadow-md"
+          />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Owner Dashboard</h1>
+            <p className="text-xs text-muted-foreground">Manage your boarding house listings, vacancies & inquiries</p>
+          </div>
         </div>
       </div>
       <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="listings">My Listings</TabsTrigger>
-          <TabsTrigger value="inquiries">Inquiries</TabsTrigger>
-          <TabsTrigger value="reservations">Reservations</TabsTrigger>
+        <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1">
+          <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📊 Overview</TabsTrigger>
+          <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 My Listings</TabsTrigger>
+          <TabsTrigger value="inquiries" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">💬 Inquiries</TabsTrigger>
+          <TabsTrigger value="reservations" className="rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📅 Reservations</TabsTrigger>
         </TabsList>
         <TabsContent value="overview"><OwnerOverview /></TabsContent>
         <TabsContent value="listings"><MyListings /></TabsContent>
@@ -79,89 +86,99 @@ function OwnerOverview() {
   const estimatedRevenue = rows.reduce((acc, r) => acc + ((r.num_rooms - r.available_vacancies) * r.monthly_fee), 0);
 
   return ( <>
+    {/* Stat Cards */}
     <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Total Properties</CardTitle>
-          <Building className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalListings}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Total Rooms</CardTitle>
-          <BedDouble className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalRooms}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Total Vacancies</CardTitle>
-          <Plus className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalVacancies}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">Est. Monthly Revenue</CardTitle>
-          <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{peso(estimatedRevenue)}</div>
-          <p className="text-xs text-muted-foreground mt-1">Based on occupied rooms</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-indigo-200 dark:border-indigo-500/30 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/60 dark:to-indigo-900/40 p-5 shadow-sm backdrop-blur-md">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">Total Properties</span>
+          <div className="h-9 w-9 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+            <Building className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-300" />
+          </div>
+        </div>
+        <div className="text-3xl font-bold text-indigo-700 dark:text-indigo-200">{totalListings}</div>
+        <div className="mt-1 text-xs text-indigo-500 dark:text-indigo-400">Listings registered</div>
+      </div>
+
+      <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/60 dark:to-emerald-900/40 p-5 shadow-sm backdrop-blur-md">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-300">Total Rooms</span>
+          <div className="h-9 w-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+            <BedDouble className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+          </div>
+        </div>
+        <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-200">{totalRooms}</div>
+        <div className="mt-1 text-xs text-emerald-500 dark:text-emerald-400">Across all properties</div>
+      </div>
+
+      <div className="rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/60 dark:to-amber-900/40 p-5 shadow-sm backdrop-blur-md">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-300">Available Slots</span>
+          <div className="h-9 w-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+            <Plus className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+          </div>
+        </div>
+        <div className="text-3xl font-bold text-amber-700 dark:text-amber-200">{totalVacancies}</div>
+        <div className="mt-1 text-xs text-amber-500 dark:text-amber-400">Open for tenants</div>
+      </div>
+
+      <div className="rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950/60 dark:to-rose-900/40 p-5 shadow-sm backdrop-blur-md">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-300">Est. Revenue</span>
+          <div className="h-9 w-9 rounded-xl bg-rose-500/20 flex items-center justify-center">
+            <CircleDollarSign className="h-4 w-4 text-rose-600 dark:text-rose-300" />
+          </div>
+        </div>
+        <div className="text-2xl font-bold text-rose-700 dark:text-rose-200">{peso(estimatedRevenue)}</div>
+        <div className="mt-1 text-xs text-rose-500 dark:text-rose-400">Based on occupied rooms</div>
+      </div>
     </div>
-  <div className="mt-8 grid gap-8 md:grid-cols-2">
-    {/* Vacancies per Property Bar Chart */}
-    <div>
-      <h3 className="text-lg font-semibold mb-4">Vacancies per Property</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={rows.map(r => ({ name: r.name, vacancies: r.available_vacancies, rooms: r.num_rooms }))}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="vacancies" fill="#3b82f6" name="Vacancies" />
-          <Bar dataKey="rooms" fill="#10b981" name="Total Rooms" />
-        </BarChart>
-      </ResponsiveContainer>
+
+    {/* Charts */}
+    <div className="mt-8 grid gap-6 md:grid-cols-2">
+      <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md p-5 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/70 mb-4">📊 Vacancies per Property</h3>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={rows.map(r => ({ name: r.name, vacancies: r.available_vacancies, rooms: r.num_rooms }))} barCategoryGap="30%">
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }} />
+            <Bar dataKey="vacancies" fill="#6366f1" name="Vacancies" radius={[6,6,0,0]} />
+            <Bar dataKey="rooms" fill="#10b981" name="Total Rooms" radius={[6,6,0,0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md p-5 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/70 mb-4">🥧 Status Distribution</h3>
+        <ResponsiveContainer width="100%" height={260}>
+          <PieChart>
+            <Pie
+              data={Object.entries(
+                rows.reduce((acc, r) => {
+                  acc[r.status] = (acc[r.status] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>)
+              ).map(([name, value]) => ({ name, value }))}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={90}
+              innerRadius={45}
+              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              labelLine={false}
+            >
+              {[0, 1, 2, 3, 4].map((index) => (
+                <Cell key={`cell-${index}`} fill={index === 0 ? "#6366f1" : index === 1 ? "#10b981" : "#ef4444"} />
+              ))}
+            </Pie>
+            <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }} />
+            <Legend verticalAlign="bottom" height={36} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
-    {/* Status Distribution Pie Chart */}
-    <div>
-      <h3 className="text-lg font-semibold mb-4">Status Distribution</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={Object.entries(
-              rows.reduce((acc, r) => {
-                acc[r.status] = (acc[r.status] || 0) + 1;
-                return acc;
-              }, {} as Record<string, number>)
-            ).map(([name, value]) => ({ name, value }))}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
-            label
-          >
-            {[0, 1, 2, 3, 4].map((index) => (
-              <Cell key={`cell-${index}`} fill={index === 0 ? "#3b82f6" : index === 1 ? "#10b981" : "#ef4444"} />
-            ))}
-          </Pie>
-          <Tooltip />
-          <Legend verticalAlign="bottom" height={36} />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
   </> );
 }
 
@@ -198,7 +215,7 @@ function OwnerListingCard({
   };
 
   return (
-    <Card className="overflow-hidden flex flex-col group transition-all hover:shadow-md">
+    <div className="group flex flex-col rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-md hover:shadow-xl hover:scale-[1.01] transition-all overflow-hidden">
       {/* Photo carousel container */}
       <div className="relative aspect-video bg-muted border-b overflow-hidden group/photo">
         {photos.length > 0 ? (
@@ -269,74 +286,85 @@ function OwnerListingCard({
         </div>
       </div>
 
-      <CardContent className="flex flex-col flex-1 p-5">
+      <div className="flex flex-col flex-1 p-5">
         <div className="mb-2">
-          <h3 className="font-semibold text-lg line-clamp-1">{r.name}</h3>
-          <p className="text-xs text-muted-foreground line-clamp-1">{r.address}</p>
+          <h3 className="font-bold text-base line-clamp-1 text-foreground">{r.name}</h3>
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{r.address}</p>
         </div>
-        <div className="mb-4 text-primary font-medium">{peso(r.monthly_fee)} / mo</div>
-        
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/50">
-          <div className="flex items-center gap-2">
+        <div className="mb-4 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 w-fit">
+          <CircleDollarSign className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{peso(r.monthly_fee)}<span className="text-xs font-normal text-emerald-600/70 dark:text-emerald-400/70"> / mo</span></span>
+        </div>
+
+        {/* Vacancy stepper */}
+        <div className="rounded-xl border border-border/60 bg-muted/40 p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vacancy Slots</span>
+            <span className="text-xs font-bold text-foreground">{r.available_vacancies} / {r.num_rooms} open</span>
+          </div>
+          <div className="flex items-center gap-3 mt-2">
             <Button
               size="sm"
               variant="outline"
-              className="h-7 w-7 p-0 rounded-full"
+              className="h-8 w-8 p-0 rounded-full border-rose-300 dark:border-rose-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
               disabled={r.available_vacancies <= 0}
               onClick={() => onChangeVacancy(-1)}
               title="Decrease vacancy"
             >
-              <Minus className="h-3 w-3" />
+              <Minus className="h-3.5 w-3.5" />
             </Button>
-            <span className="w-14 text-center text-sm font-medium">
-              {r.available_vacancies}/{r.num_rooms}
-            </span>
+            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all"
+                style={{ width: `${r.num_rooms > 0 ? (r.available_vacancies / r.num_rooms) * 100 : 0}%` }}
+              />
+            </div>
             <Button
               size="sm"
               variant="outline"
-              className="h-7 w-7 p-0 rounded-full"
+              className="h-8 w-8 p-0 rounded-full border-emerald-300 dark:border-emerald-700 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
               disabled={r.available_vacancies >= r.num_rooms}
               onClick={() => onChangeVacancy(+1)}
               title="Increase vacancy"
             >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-              onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/browse?q=${encodeURIComponent(r.name)}`);
-                toast.success("Link copied to clipboard");
-              }}
-              title="Share Listing"
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-              onClick={onEdit}
-              title="Edit Listing"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-              onClick={onRemove}
-              title="Delete Listing"
-            >
-              <Trash2 className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="flex gap-2 mt-auto">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5 rounded-xl border-indigo-200 dark:border-indigo-700 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+            onClick={onEdit}
+          >
+            <Edit className="h-3.5 w-3.5" /> Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 rounded-xl border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/browse?q=${encodeURIComponent(r.name)}`);
+              toast.success("Link copied!");
+            }}
+            title="Share"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+            onClick={onRemove}
+            title="Delete"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -408,7 +436,9 @@ function MyListings() {
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="mr-1 h-4 w-4" /> New listing</Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 px-5">
+              <Plus className="h-4 w-4" /> New Listing
+            </Button>
           </DialogTrigger>
           <ListingDialog
             key={editing?.id ?? "new"}
@@ -751,27 +781,51 @@ function OwnerInquiries() {
 
   return (
     <div className="mt-4 space-y-3">
-      {rows.length === 0 && <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">No inquiries yet.</div>}
+      {rows.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-12 text-center">
+          <div className="text-4xl mb-3">💬</div>
+          <div className="font-semibold text-foreground">No inquiries yet</div>
+          <div className="text-sm text-muted-foreground mt-1">When customers message you, they'll appear here.</div>
+        </div>
+      )}
       {rows.map((i) => (
-        <div key={i.id} className="rounded-xl border border-border bg-card p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <div key={i.id} className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold">{i.boarding_houses?.name ?? "—"}</div>
-              <div className="text-xs text-muted-foreground">{new Date(i.created_at).toLocaleString()}</div>
+              <div className="font-bold text-base text-foreground">{i.boarding_houses?.name ?? "—"}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{new Date(i.created_at).toLocaleString()}</div>
             </div>
-            <Badge variant={i.status === "new" ? "default" : i.status === "responded" ? "secondary" : "outline"}>{i.status}</Badge>
+            <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+              i.status === "new" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+              : i.status === "responded" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+            }`}>{i.status}</span>
           </div>
-          <p className="mt-2 whitespace-pre-wrap text-sm">{i.message}</p>
+          <div className="mt-3 rounded-xl bg-muted/50 border border-border/50 p-3">
+            <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">{i.message}</p>
+          </div>
           {i.profiles && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              From <span className="font-medium text-foreground">{i.profiles.full_name || "—"}</span>
-              {i.profiles.email && ` · ${i.profiles.email}`}
-              {i.profiles.phone && ` · ${i.profiles.phone}`}
+            <div className="mt-3 flex items-center gap-2 text-xs">
+              <span className="rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 font-semibold border border-indigo-200 dark:border-indigo-700">
+                👤 {i.profiles.full_name || "Unknown"}
+              </span>
+              {i.profiles.email && <span className="text-muted-foreground">✉ {i.profiles.email}</span>}
+              {i.profiles.phone && <span className="text-muted-foreground">📞 {i.profiles.phone}</span>}
             </div>
           )}
-          <div className="mt-3 flex gap-2">
-            {i.status !== "responded" && <Button size="sm" variant="outline" onClick={() => setStatus(i.id, "responded")}>Mark responded</Button>}
-            {i.status !== "closed" && <Button size="sm" variant="ghost" onClick={() => setStatus(i.id, "closed")}>Close</Button>}
+          <div className="mt-4 flex gap-2 pt-3 border-t border-border/40">
+            {i.status !== "responded" && (
+              <Button size="sm" onClick={() => setStatus(i.id, "responded")}
+                className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+                ✓ Mark Responded
+              </Button>
+            )}
+            {i.status !== "closed" && (
+              <Button size="sm" variant="outline" onClick={() => setStatus(i.id, "closed")}
+                className="gap-1.5 rounded-xl border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300">
+                Close
+              </Button>
+            )}
           </div>
         </div>
       ))}
@@ -854,8 +908,10 @@ function OwnerReservations() {
 
   if (rows.length === 0) {
     return (
-      <div className="mt-4 rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-        No reservations yet.
+      <div className="mt-4 rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-700/40 bg-blue-50/50 dark:bg-blue-950/20 p-12 text-center">
+        <div className="text-4xl mb-3">📅</div>
+        <div className="font-semibold text-foreground">No reservations yet</div>
+        <div className="text-sm text-muted-foreground mt-1">Reservation requests from customers will appear here.</div>
       </div>
     );
   }
@@ -865,50 +921,51 @@ function OwnerReservations() {
       {rows.map((r) => {
         const isPending = r.status === "pending" && new Date(r.expiresAt) > new Date();
         return (
-          <div key={r.id} className="rounded-xl border border-border bg-card p-4">
+          <div key={r.id} className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="font-semibold text-base">{r.boardingHouseName}</div>
+              <div className="space-y-2">
+                <div className="font-bold text-base text-foreground">{r.boardingHouseName}</div>
                 {r.roomDeck && (
-                  <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  <div className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-200 dark:border-indigo-700 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                     <BedDouble className="h-3.5 w-3.5" />
                     <span>{r.roomDeck}</span>
-                    {r.price && <span>· {peso(r.price)}/mo</span>}
+                    {r.price && <span className="opacity-70">· {peso(r.price)}/mo</span>}
                   </div>
                 )}
-                <div className="text-sm text-muted-foreground">
-                  {r.customerName} · <span className="text-xs">{r.customerEmail}</span>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium text-foreground">{r.customerName}</span>
+                  <span className="text-xs text-muted-foreground">{r.customerEmail}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Reserved {new Date(r.createdAt).toLocaleDateString()}
+                  📌 Reserved {new Date(r.createdAt).toLocaleDateString()}
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1.5">
+              <div className="flex flex-col items-end gap-2">
                 {statusBadge(r.status, r.expiresAt)}
                 {isPending && (
-                  <div className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
-                    <Clock className="h-3 w-3" />
-                    <span className="font-mono font-semibold">{getCountdown(r.expiresAt)}</span>
+                  <div className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-300 dark:border-emerald-700 px-2.5 py-1">
+                    <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">{getCountdown(r.expiresAt)}</span>
                   </div>
                 )}
               </div>
             </div>
             {isPending && (
-              <div className="mt-3 flex gap-2">
+              <div className="mt-4 pt-4 border-t border-border/40 flex gap-2">
                 <Button
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20"
                   onClick={() => doConfirm(r.id)}
                 >
-                  Confirm Reservation
+                  ✓ Confirm Reservation
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="text-destructive hover:text-destructive"
+                  className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                   onClick={() => doCancel(r.id)}
                 >
-                  Cancel
+                  ✕ Cancel
                 </Button>
               </div>
             )}

@@ -33,49 +33,73 @@ function OwnerAuthPage() {
   }, [user, role, navigate]);
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden bg-gradient-to-br from-indigo-700 to-indigo-900 p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-        <div className="flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/15">
-            <KeyRound className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="font-semibold">BH Vacancy Tracker</div>
-            <div className="text-xs opacity-80">Owner Portal</div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold">Manage your boarding house with ease.</h2>
-          <p className="opacity-90">Reach more students, manage vacancies in real-time, and handle inquiries securely from one dashboard.</p>
-          <ul className="space-y-2 text-sm opacity-90">
-            <li>• List your rooms for free</li>
-            <li>• Instantly update your vacancy counts</li>
-            <li>• Receive and reply to direct messages</li>
-          </ul>
-        </div>
-        <div className="text-xs opacity-70">For verified boarding house owners near ZDSPGC-Dimataling.</div>
+    <div className="relative grid min-h-screen lg:grid-cols-2 overflow-hidden bg-background/50">
+      {/* Ambient background light orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-[34rem] w-[34rem] rounded-full bg-indigo-500/15 blur-[120px] dark:bg-indigo-500/20 animate-pulse-glow" />
+        <div className="absolute bottom-10 right-10 h-[38rem] w-[38rem] rounded-full bg-blue-500/12 blur-[140px] dark:bg-blue-600/15 animate-float-slow" />
       </div>
 
-      <div className="flex items-center justify-center p-6 bg-slate-50">
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-          <div className="mb-6 text-center lg:hidden">
-            <h1 className="text-2xl font-bold text-slate-900">Owner Portal</h1>
-            <p className="text-sm text-slate-500">Manage your boarding house</p>
+      <div className="hidden relative bg-gradient-to-br from-indigo-800 via-indigo-900 to-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between overflow-hidden">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-blue-400/15 blur-3xl" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="ZDSPGC BH Tracker Logo"
+            className="h-12 w-12 rounded-full object-cover border-2 border-white/50 shadow-lg"
+          />
+          <div>
+            <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
+            <div className="text-xs text-indigo-200">Owner Portal · ZDSPGC Dimataling</div>
+          </div>
+        </div>
+        <div className="relative z-10 space-y-5 max-w-lg">
+          <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
+            Property Owner Dashboard
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Manage your boarding house with ease.</h2>
+          <p className="text-indigo-100/90 leading-relaxed text-sm">Reach more students, manage vacancies in real-time, and handle inquiries securely from one intuitive dashboard.</p>
+          <ul className="space-y-2.5 text-sm text-indigo-100">
+            <li className="flex items-center gap-2">• List and showcase your rooms with photos</li>
+            <li className="flex items-center gap-2">• Instantly update vacancy counts & room decks</li>
+            <li className="flex items-center gap-2">• Review reservations and verify tenant holds</li>
+          </ul>
+        </div>
+        <div className="relative z-10 text-xs text-indigo-200/80">For verified boarding house owners near ZDSPGC-Dimataling.</div>
+      </div>
+
+      <div className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/60 dark:border-white/15 shadow-2xl backdrop-blur-2xl">
+          <div className="mb-6 text-center">
+            <img
+              src="/logo.png"
+              alt="ZDSPGC BH Tracker Logo"
+              className="mx-auto mb-3.5 h-16 w-16 rounded-full object-cover border-2 border-indigo-500/40 shadow-lg"
+            />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Owner Portal</h1>
+            <p className="text-xs text-muted-foreground mt-1">Sign in or register your property to start listing</p>
           </div>
           <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 mb-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Register</TabsTrigger>
             </TabsList>
             <TabsContent value="signin"><SignInForm /></TabsContent>
             <TabsContent value="signup"><SignUpForm /></TabsContent>
           </Tabs>
-          <div className="flex items-center mb-4 cursor-pointer text-indigo-400 hover:underline" onClick={() => navigate({ to: '/' })}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to Home
-          </div>
-          <div className="mt-6 text-center text-xs text-slate-500">
-            Return to <a href="/" className="text-indigo-400 hover:underline">main site</a>
+          <div className="mt-6 flex items-center justify-between border-t border-white/40 dark:border-white/10 pt-4 text-xs">
+            <button
+              type="button"
+              className="flex items-center text-indigo-500 hover:text-indigo-600 transition-colors font-medium"
+              onClick={() => navigate({ to: "/" })}
+            >
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to Home
+            </button>
+            <a href="/customer/login" className="text-muted-foreground hover:text-foreground transition-colors">
+              Student login →
+            </a>
           </div>
         </div>
       </div>

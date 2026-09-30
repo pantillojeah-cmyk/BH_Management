@@ -47,18 +47,43 @@ function Profile() {
   return (
     <AppShell>
       <div className="mx-auto max-w-xl">
-        <h1 className="mb-1 text-2xl font-bold">My Profile</h1>
-        <p className="mb-6 text-sm text-muted-foreground">Signed in as <span className="font-medium">{user.email}</span> · role <span className="uppercase text-primary">{role}</span></p>
-        <div className="space-y-4 rounded-xl border border-border bg-card p-6">
-          <div>
-            <Label>Full name</Label>
-            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} />
+        <h1 className="mb-1 text-2xl font-bold flex items-center gap-2">
+          <span>My Profile</span>
+        </h1>
+        <p className="mb-6 text-sm text-muted-foreground">
+          Signed in as <span className="font-semibold text-foreground">{user.email}</span> · role{" "}
+          <span className="inline-block rounded-full bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+            {role}
+          </span>
+        </p>
+        <div className="glass-panel space-y-5 rounded-3xl border border-white/60 dark:border-white/10 p-7 shadow-xl backdrop-blur-2xl">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full name</Label>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="e.g. Maria Santos"
+              maxLength={100}
+              className="h-11 rounded-xl"
+            />
           </div>
-          <div>
-            <Label>Phone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Phone number</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 09123456789"
+              maxLength={30}
+              className="h-11 rounded-xl"
+            />
           </div>
-          <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
+          <Button
+            onClick={save}
+            disabled={saving}
+            className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white shadow-md shadow-emerald-600/20 border border-white/20 font-semibold"
+          >
+            {saving ? "Saving…" : "Save Changes"}
+          </Button>
         </div>
       </div>
     </AppShell>

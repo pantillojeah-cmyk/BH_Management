@@ -166,7 +166,7 @@ export function BoardingHouseCard({
   };
 
   return (
-    <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:shadow-md flex flex-col">
+    <div className="glass-card group overflow-hidden rounded-2xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
       {/* ── Photo Section with Carousel & Room Selection ── */}
       <div
         className="relative aspect-[16/10] overflow-hidden bg-muted group/img select-none cursor-pointer"
@@ -289,7 +289,7 @@ export function BoardingHouseCard({
 
       {/* ── Room Selector Pills ── */}
       {rooms.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto px-4 py-2 bg-muted/40 border-b border-border/60 scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto px-4 py-2.5 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md border-b border-white/50 dark:border-white/10 scrollbar-none">
           {rooms.map((r, i) => (
             <button
               key={r.name}
@@ -302,14 +302,14 @@ export function BoardingHouseCard({
                   toast.success(`Selected "${r.name}"`);
                 }
               }}
-              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+              className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 backdrop-blur-md ${
                 i === currentIdx
                   ? r.isOccupied
-                    ? "bg-rose-600 text-white shadow-sm scale-105"
-                    : "bg-emerald-600 text-white shadow-sm scale-105"
+                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-105 border border-rose-400/50"
+                    : "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-105 border border-emerald-400/50"
                   : r.isOccupied
-                  ? "bg-muted/80 text-muted-foreground line-through opacity-70 hover:opacity-100"
-                  : "bg-background border border-border text-foreground hover:bg-accent"
+                  ? "bg-muted/60 text-muted-foreground line-through opacity-70 hover:opacity-100 border border-white/20 dark:border-white/5"
+                  : "bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-white/10 text-foreground hover:bg-white dark:hover:bg-slate-800"
               }`}
             >
               <span>{r.name}</span>
@@ -323,14 +323,14 @@ export function BoardingHouseCard({
       <div className="space-y-3 p-4 flex-1 flex flex-col justify-between">
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <Link to="/listing/$id" params={{ id: bh.id }} className="text-base font-bold text-foreground hover:underline line-clamp-1">
+            <Link to="/listing/$id" params={{ id: bh.id }} className="text-base font-bold text-foreground hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1">
               {bh.name}
             </Link>
             {onToggleFavorite && (
               <button
                 onClick={onToggleFavorite}
                 aria-label="Toggle favorite"
-                className="rounded-full p-1.5 hover:bg-accent text-muted-foreground transition-colors flex-shrink-0"
+                className="rounded-full p-1.5 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-md text-muted-foreground hover:text-rose-500 transition-all flex-shrink-0"
               >
                 <Heart className={`h-4 w-4 ${isFavorite ? "fill-rose-500 text-rose-500" : ""}`} />
               </button>
@@ -340,34 +340,34 @@ export function BoardingHouseCard({
           <StarRating rating={bh.avg_rating} count={bh.review_count} />
 
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span className="line-clamp-1">{bh.address}</span>
           </div>
 
-          <div className="flex flex-wrap gap-1 pt-0.5">
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
             {bh.amenities.slice(0, 3).map((a) => (
-              <span key={a} className="rounded-md bg-secondary px-2 py-0.5 text-[10px] text-secondary-foreground font-medium">
+              <span key={a} className="rounded-lg bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-white/50 dark:border-white/10 px-2 py-0.5 text-[10px] text-foreground/80 font-medium shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                 {a}
               </span>
             ))}
             {bh.amenities.length > 3 && (
-              <span className="text-[10px] text-muted-foreground">+{bh.amenities.length - 3} more</span>
+              <span className="text-[10px] text-muted-foreground flex items-center">+{bh.amenities.length - 3} more</span>
             )}
           </div>
         </div>
 
         {/* ── Price & Reservation Action ── */}
-        <div className="pt-3 border-t border-border/50 space-y-2.5">
+        <div className="pt-3 border-t border-white/50 dark:border-white/10 space-y-2.5">
           <div className="flex items-baseline justify-between">
             <div>
               <div className="text-xs text-muted-foreground">Price per room</div>
-              <div className="text-lg font-bold text-primary">
+              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                 {peso(bh.monthly_fee)}
                 <span className="text-xs font-normal text-muted-foreground">/mo</span>
               </div>
             </div>
             <div className="text-right">
-              <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${toneClass[state.tone]}`}>
+              <span className={`rounded-full border border-white/60 dark:border-white/15 px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-sm ${toneClass[state.tone]}`}>
                 {bh.available_vacancies}/{bh.num_rooms} Vacant
               </span>
             </div>
@@ -376,10 +376,10 @@ export function BoardingHouseCard({
           {/* Reserve This Room Button */}
           <Button
             type="button"
-            className={`w-full font-semibold shadow-sm transition-all text-xs h-9 ${
+            className={`w-full font-semibold shadow-md transition-all text-xs h-9 rounded-xl ${
               activeRoom.isOccupied
-                ? "bg-muted text-muted-foreground border border-border cursor-not-allowed hover:bg-muted"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-emerald-600/25"
+                ? "bg-muted/70 text-muted-foreground border border-white/30 dark:border-white/10 cursor-not-allowed hover:bg-muted/70"
+                : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 border border-white/30 hover:scale-[1.01] active:scale-[0.99]"
             }`}
             disabled={activeRoom.isOccupied || reserving}
             onClick={handleReserve}

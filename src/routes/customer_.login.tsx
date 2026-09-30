@@ -33,39 +33,66 @@ function AuthPage() {
   }, [user, role, navigate]);
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden bg-gradient-to-br from-primary to-primary/70 p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-        <div className="flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-white/15">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="font-semibold">BH Vacancy Tracker</div>
-            <div className="text-xs opacity-80">ZDSPGC-Dimataling Campus</div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold">Find your boarding house near ZDSPGC Dimataling Campus — the easy way.</h2>
-          <p className="opacity-90">Real-time vacancies, verified listings, and direct messaging with boarding house owners in ZDSPGC Dimataling — all in one place.</p>
-          <ul className="space-y-2 text-sm opacity-90">
-            <li>• Search by rent, amenities, and vacancy</li>
-            <li>• Save your favorite boarding houses near campus</li>
-            <li>• Message owners directly</li>
-          </ul>
-        </div>
-        <div className="text-xs opacity-70">For students, faculty, staff, and visitors of ZDSPGC-Dimataling.</div>
+    <div className="relative grid min-h-screen lg:grid-cols-2 overflow-hidden bg-background/50">
+      {/* Ambient background light orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-[34rem] w-[34rem] rounded-full bg-emerald-500/15 blur-[120px] dark:bg-emerald-500/20 animate-pulse-glow" />
+        <div className="absolute bottom-10 right-10 h-[38rem] w-[38rem] rounded-full bg-teal-400/12 blur-[140px] dark:bg-teal-500/15 animate-float-slow" />
       </div>
 
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+      <div className="hidden relative bg-gradient-to-br from-emerald-700 via-teal-800 to-emerald-900 p-12 text-white lg:flex lg:flex-col lg:justify-between overflow-hidden">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="ZDSPGC BH Tracker Logo"
+            className="h-12 w-12 rounded-full object-cover border-2 border-white/50 shadow-lg"
+          />
+          <div>
+            <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
+            <div className="text-xs text-emerald-200">ZDSPGC-Dimataling Campus</div>
+          </div>
+        </div>
+        <div className="relative z-10 space-y-5 max-w-lg">
+          <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
+            Student & Employee Portal
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Find your boarding house near campus the easy way.</h2>
+          <p className="text-emerald-100/90 leading-relaxed text-sm">Real-time vacancies, verified listings, and direct reservation holds for students and staff — all in one place.</p>
+          <ul className="space-y-2.5 text-sm text-emerald-100">
+            <li className="flex items-center gap-2">• Search by rent fee, amenities, and available deck</li>
+            <li className="flex items-center gap-2">• Save your favorite boarding houses for later</li>
+            <li className="flex items-center gap-2">• Reserve a room hold for up to 48 hours</li>
+          </ul>
+        </div>
+        <div className="relative z-10 text-xs text-emerald-200/80">For students, faculty, staff, and visitors of ZDSPGC-Dimataling.</div>
+      </div>
+
+      <div className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/60 dark:border-white/15 shadow-2xl backdrop-blur-2xl">
+          <div className="mb-6 text-center">
+            <img
+              src="/logo.png"
+              alt="ZDSPGC BH Tracker Logo"
+              className="mx-auto mb-3.5 h-16 w-16 rounded-full object-cover border-2 border-emerald-500/40 shadow-lg"
+            />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome to BH Tracker</h1>
+            <p className="text-xs text-muted-foreground mt-1">Sign in or create an account to manage your reservations</p>
+          </div>
           <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 mb-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Create account</TabsTrigger>
             </TabsList>
             <TabsContent value="signin"><SignInForm /></TabsContent>
             <TabsContent value="signup"><SignUpForm /></TabsContent>
           </Tabs>
+
+          <div className="mt-6 pt-4 border-t border-white/40 dark:border-white/10 text-center text-xs text-muted-foreground">
+            Are you a boarding house owner? <a href="/owner/login" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">Owner Portal</a>
+          </div>
         </div>
       </div>
     </div>

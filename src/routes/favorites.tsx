@@ -52,13 +52,25 @@ function Favorites() {
 
   return (
     <AppShell>
-      <h1 className="mb-4 text-2xl font-bold">My Favorites</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 border border-rose-500/25 text-rose-500 shadow-sm backdrop-blur-md">
+              <span className="text-base">❤️</span>
+            </div>
+            My Favorites
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Boarding houses you saved for easy access and comparison.</p>
+        </div>
+      </div>
+
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          You haven't saved any boarding houses yet.
+        <div className="glass-card rounded-3xl border border-dashed border-white/60 dark:border-white/10 p-12 text-center text-muted-foreground backdrop-blur-xl">
+          <p className="text-base font-semibold text-foreground">You haven't saved any boarding houses yet.</p>
+          <p className="text-xs text-muted-foreground mt-1">Tap the heart icon on any listing card to keep it here.</p>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((bh) => (
             <BoardingHouseCard key={bh.id} bh={bh} isFavorite onToggleFavorite={() => remove(bh.id)} />
           ))}
