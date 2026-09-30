@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: bh-management
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: node dist/server/server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: BETTER_AUTH_URL
+        value: https://bh-management.onrender.com
+      - key: VITE_APP_URL
+        value: https://bh-management.onrender.com
