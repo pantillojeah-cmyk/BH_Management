@@ -335,6 +335,10 @@ function ListingDetail() {
   const [bh, setBh] = useState<BH | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [amenityPhotos, setAmenityPhotos] = useState<Record<string, string[]>>({});
+  const [amenityViewerPhotos, setAmenityViewerPhotos] = useState<string[]>([]);
+  const [amenityViewerIdx, setAmenityViewerIdx] = useState(0);
+  const [amenityViewerOpen, setAmenityViewerOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [isFav, setIsFav] = useState(false);
   const [sending, setSending] = useState(false);
@@ -361,6 +365,9 @@ function ListingDetail() {
     setBh(result.bh as BH);
     setPhotos(result.photos.filter(Boolean));
     setReviews(result.reviews as ReviewRow[]);
+    if (result.amenityPhotos) {
+      setAmenityPhotos(result.amenityPhotos as Record<string, string[]>);
+    }
   };
 
   useEffect(() => { load(); }, [id]);
@@ -599,15 +606,84 @@ function ListingDetail() {
             {bh.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{bh.description}</p>}
 
             <div className="mt-6">
-              <div className="mb-2.5 text-sm font-semibold">Amenities</div>
-              <div className="flex flex-wrap gap-2">
-                {bh.amenities.map((a) => (
-                  <span key={a} className="rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-white/50 dark:border-white/10 px-3 py-1 text-xs text-foreground font-medium shadow-xs">
-                    {a}
-                  </span>
-                ))}
+              <div className="mb-3 text-sm font-semibold">Amenities</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {bh.amenities.map((a) => {
+                  const aphotos = amenityPhotos[a] ?? [];
+                  return (
+                    <div
+                      key={a}
+                      className="rounded-xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md shadow-xs overflow-hidden"
+                    >
+                      {/* Amenity label */}
+                      <div className="px-3 py-2 text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                        {a}
+                      </div>
+                      {/* Photos strip */}
+                      {aphotos.length > 0 ? (
+                        <div className="flex gap-1.5 px-2 pb-2 overflow-x-auto">
+                          {aphotos.map((url, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setAmenityViewerPhotos(aphotos);
+                                setAmenityViewerIdx(idx);
+                                setAmenityViewerOpen(true);
+                              }}
+                              className="flex-shrink-0 h-16 w-20 rounded-lg overflow-hidden border border-border/50 hover:ring-2 hover:ring-primary/60 transition-all"
+                            >
+                              <img
+                                src={url}
+                                alt={`${a} photo ${idx + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-3 pb-2 text-[10px] text-muted-foreground italic">No photos uploaded</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
+            {/* Amenity photo lightbox */}
+            {amenityViewerOpen && amenityViewerPhotos.length > 0 && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+                onClick={() => setAmenityViewerOpen(false)}
+              >
+                <div className="relative max-w-3xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                  <img
+                    src={amenityViewerPhotos[amenityViewerIdx]}
+                    alt="Amenity"
+                    className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl"
+                  />
+                  {amenityViewerPhotos.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setAmenityViewerIdx((i) => (i === 0 ? amenityViewerPhotos.length - 1 : i - 1))}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2.5 transition"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAmenityViewerIdx((i) => (i === amenityViewerPhotos.length - 1 ? 0 : i + 1))}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2.5 transition"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </>
+                  )}
+                  <div className="mt-2 text-center text-white/70 text-xs">{amenityViewerIdx + 1} / {amenityViewerPhotos.length} — click outside to close</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Location Map ── */}

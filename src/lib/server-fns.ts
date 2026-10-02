@@ -48,7 +48,7 @@ export const getListingById = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const bh = await prisma.boardingHouse.findUnique({ where: { id: data.id } });
     if (!bh) return null;
-    const [photos, reviews] = await Promise.all([
+    const [photos, reviews, amenityPhotoRows] = await Promise.all([
       prisma.boardingHousePhoto.findMany({
         where: { boardingHouseId: data.id },
         orderBy: { sortOrder: "asc" },
@@ -59,11 +59,21 @@ export const getListingById = createServerFn({ method: "GET" })
         orderBy: { createdAt: "desc" },
         include: { customer: { select: { name: true } } },
       }),
+      prisma.amenityPhoto.findMany({
+        where: { boardingHouseId: data.id },
+        orderBy: { createdAt: "asc" },
+        select: { amenityName: true, url: true },
+      }),
     ]);
     const reviewCount = reviews.length;
     const avgRating = reviewCount > 0
       ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviewCount) * 10) / 10
       : null;
+    const amenityPhotos: Record<string, string[]> = {};
+    for (const row of amenityPhotoRows) {
+      if (!amenityPhotos[row.amenityName]) amenityPhotos[row.amenityName] = [];
+      amenityPhotos[row.amenityName].push(row.url);
+    }
     return {
       bh: {
         id: bh.id, owner_id: bh.ownerId, name: bh.name, address: bh.address,
@@ -75,6 +85,7 @@ export const getListingById = createServerFn({ method: "GET" })
         avg_rating: avgRating, review_count: reviewCount,
       },
       photos: photos.map((p) => p.url),
+      amenityPhotos,
       reviews: reviews.map((r) => ({
         id: r.id,
         rating: r.rating,
@@ -285,8 +296,47 @@ export const upsertListing = createServerFn({ method: "POST" })
           })),
         });
       }
+      return { success: true, id: created.id };
     }
     return { success: true };
+  });
+
+// Save amenity photos for a boarding house (replaces existing for given amenities)
+export const saveAmenityPhotos = createServerFn({ method: "POST" })
+  .validator((data: { boardingHouseId: string; photos: { amenityName: string; url: string }[] }) => data)
+  .handler(async ({ data }) => {
+    // Remove old photos for the amenities being updated
+    const amenityNames = [...new Set(data.photos.map((p) => p.amenityName))];
+    await prisma.amenityPhoto.deleteMany({
+      where: { boardingHouseId: data.boardingHouseId, amenityName: { in: amenityNames } },
+    });
+    if (data.photos.length > 0) {
+      await prisma.amenityPhoto.createMany({
+        data: data.photos.map((p) => ({
+          boardingHouseId: data.boardingHouseId,
+          amenityName: p.amenityName,
+          url: p.url,
+        })),
+      });
+    }
+    return { success: true };
+  });
+
+export const getAmenityPhotos = createServerFn({ method: "GET" })
+  .validator((data: { boardingHouseId: string }) => data)
+  .handler(async ({ data }) => {
+    const rows = await prisma.amenityPhoto.findMany({
+      where: { boardingHouseId: data.boardingHouseId },
+      orderBy: { createdAt: "asc" },
+      select: { amenityName: true, url: true },
+    });
+    // Group by amenityName
+    const grouped: Record<string, string[]> = {};
+    for (const row of rows) {
+      if (!grouped[row.amenityName]) grouped[row.amenityName] = [];
+      grouped[row.amenityName].push(row.url);
+    }
+    return grouped;
   });
 
 export const getOwnerInquiries = createServerFn({ method: "GET" })

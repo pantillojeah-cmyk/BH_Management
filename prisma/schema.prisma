@@ -149,6 +149,7 @@ model BoardingHouse {
 
   owner              User?                @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   photos             BoardingHousePhoto[]
+  amenityPhotos      AmenityPhoto[]
   favorites          Favorite[]
   inquiries          Inquiry[]
   reviews            Review[]
@@ -167,6 +168,18 @@ model BoardingHousePhoto {
   boardingHouse   BoardingHouse @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
 
   @@map("boarding_house_photos")
+}
+
+model AmenityPhoto {
+  id              String        @id @default(cuid())
+  boardingHouseId String
+  amenityName     String        // e.g. "Wi-Fi", "Kitchen"
+  url             String
+  createdAt       DateTime      @default(now())
+
+  boardingHouse   BoardingHouse @relation(fields: [boardingHouseId], references: [id], onDelete: Cascade)
+
+  @@map("amenity_photos")
 }
 
 model Favorite {

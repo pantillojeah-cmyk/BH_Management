@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { toast } from "sonner";
 import { peso, vacancyState, toneClass } from "@/lib/format";
-import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation } from "@/lib/server-fns";
+import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos } from "@/lib/server-fns";
 
 export const Route = createFileRoute("/owner")({
   head: () => ({ meta: [{ title: "Owner Dashboard" }] }),
@@ -488,12 +488,49 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   const [rooms, setRooms] = useState(initial?.num_rooms?.toString() ?? "");
   const [vacancies, setVacancies] = useState(initial?.available_vacancies?.toString() ?? "");
   const [amenities, setAmenities] = useState<string[]>(initial?.amenities ?? []);
+  const [amenityPhotos, setAmenityPhotos] = useState<Record<string, string[]>>({});
   const [extraPhotos, setExtraPhotos] = useState<string[]>(initial?.extraPhotos ?? []);
   const [coverPreview, setCoverPreview] = useState<string | null>(initial?.cover_photo_url ?? null);
   const [coverPath, setCoverPath] = useState<string | null>(initial?.cover_photo_url ?? null);
   const [busy, setBusy] = useState(false);
 
+  // Load existing amenity photos on edit
+  useEffect(() => {
+    if (initial?.id) {
+      getAmenityPhotos({ data: { boardingHouseId: initial.id } }).then((data) => {
+        setAmenityPhotos(data as Record<string, string[]>);
+      });
+    }
+  }, [initial?.id]);
+
   const toggleAmenity = (a: string) => setAmenities((s) => s.includes(a) ? s.filter((x) => x !== a) : [...s, a]);
+
+  const handleAmenityPhoto = async (amenityName: string, file: File) => {
+    if (!user) return;
+    try {
+      setBusy(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("userId", user.id);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      setAmenityPhotos((prev) => ({
+        ...prev,
+        [amenityName]: [...(prev[amenityName] ?? []), url],
+      }));
+      toast.success(`Photo added for ${amenityName}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setBusy(false); }
+  };
+
+  const removeAmenityPhoto = (amenityName: string, idx: number) => {
+    setAmenityPhotos((prev) => ({
+      ...prev,
+      [amenityName]: (prev[amenityName] ?? []).filter((_, i) => i !== idx),
+    }));
+  };
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -572,7 +609,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
     try {
       const latNum = latitude.trim() ? parseFloat(latitude) : null;
       const lngNum = longitude.trim() ? parseFloat(longitude) : null;
-      await upsertListing({
+      const result = await upsertListing({
         data: {
           id: isEdit ? initial!.id : undefined,
           ownerId: user.id, name: name.trim(), address: address.trim(),
@@ -583,6 +620,17 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           latitude: latNum, longitude: lngNum,
         },
       });
+      // Save amenity photos if any exist
+      const bhId = isEdit ? initial!.id : (result as any)?.id;
+      const amenityPhotoEntries: { amenityName: string; url: string }[] = [];
+      for (const [amenityName, urls] of Object.entries(amenityPhotos)) {
+        for (const url of urls) {
+          amenityPhotoEntries.push({ amenityName, url });
+        }
+      }
+      if (bhId && amenityPhotoEntries.length > 0) {
+        await saveAmenityPhotos({ data: { boardingHouseId: bhId, photos: amenityPhotoEntries } });
+      }
       toast.success(isEdit ? "Updated" : "Submitted for admin approval");
       onSaved();
     } catch (e) { toast.error((e as Error).message); }
@@ -698,13 +746,68 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
         <div className="sm:col-span-2"><Label>Description</Label><Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} maxLength={2000} /></div>
         <div className="sm:col-span-2">
           <Label>Amenities</Label>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {AMENITY_OPTIONS.map((a) => (
-              <button type="button" key={a} onClick={() => toggleAmenity(a)}
-                className={`rounded-full border px-3 py-1 text-xs ${amenities.includes(a) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"}`}>
-                {a}
-              </button>
-            ))}
+          <p className="text-xs text-muted-foreground mt-0.5 mb-2">Select amenities your boarding house offers, then optionally upload photos so tenants can see what each amenity looks like.</p>
+          <div className="space-y-2">
+            {AMENITY_OPTIONS.map((a) => {
+              const selected = amenities.includes(a);
+              const photos = amenityPhotos[a] ?? [];
+              return (
+                <div key={a} className={`rounded-xl border transition-all ${
+                  selected
+                    ? "border-primary/40 bg-primary/5"
+                    : "border-border bg-background/60"
+                }`}>
+                  {/* Amenity header row */}
+                  <button
+                    type="button"
+                    onClick={() => toggleAmenity(a)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
+                  >
+                    <span className={`h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      selected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                    }`}>
+                      {selected && <span className="text-white text-[10px] leading-none font-bold">✓</span>}
+                    </span>
+                    <span className={`text-sm font-medium flex-1 ${selected ? "text-primary" : "text-foreground"}`}>{a}</span>
+                    {selected && photos.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground rounded-full bg-muted px-2 py-0.5">
+                        {photos.length} photo{photos.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </button>
+                  {/* Photo upload area — only visible when amenity is selected */}
+                  {selected && (
+                    <div className="px-3 pb-3">
+                      <div className="flex flex-wrap gap-2 items-start">
+                        {photos.map((url, idx) => (
+                          <div key={idx} className="relative group h-20 w-28 rounded-lg overflow-hidden border border-border/60">
+                            <img src={url} alt={`${a} ${idx + 1}`} className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeAmenityPhoto(a, idx)}
+                              className="absolute top-1 right-1 bg-black/60 hover:bg-destructive text-white rounded-full p-1 transition duration-200 opacity-0 group-hover:opacity-100"
+                              title="Remove photo"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                        <label className="h-20 w-28 flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors text-primary">
+                          <Upload className="h-4 w-4" />
+                          <span className="text-[10px] font-medium">Add photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAmenityPhoto(a, f); }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="sm:col-span-2">
