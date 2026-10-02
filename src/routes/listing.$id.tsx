@@ -637,7 +637,12 @@ function ListingDetail() {
                               <img
                                 src={url}
                                 alt={`${a} photo ${idx + 1}`}
-                                className="h-full w-full object-cover"
+                                loading="lazy"
+                                className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                                onError={(e) => {
+                                  // Fallback: hide broken image container if file missing
+                                  (e.currentTarget as HTMLImageElement).parentElement?.classList.add("hidden");
+                                }}
                               />
                             </button>
                           ))}

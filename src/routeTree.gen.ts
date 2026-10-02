@@ -17,6 +17,7 @@ import { Route as ManagementRouteImport } from './routes/management'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UploadsSplatRouteImport } from './routes/uploads.$'
 import { Route as OwnerLoginRouteImport } from './routes/owner_.login'
 import { Route as ManagementLoginRouteImport } from './routes/management_.login'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
@@ -64,6 +65,11 @@ const BrowseRoute = BrowseRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UploadsSplatRoute = UploadsSplatRouteImport.update({
+  id: '/uploads/$',
+  path: '/uploads/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerLoginRoute = OwnerLoginRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/listing/$id': typeof ListingIdRoute
   '/management/login': typeof ManagementLoginRoute
   '/owner/login': typeof OwnerLoginRoute
+  '/uploads/$': typeof UploadsSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/management/export-listings/$': typeof ApiManagementExportListingsSplatRoute
 }
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/listing/$id': typeof ListingIdRoute
   '/management/login': typeof ManagementLoginRoute
   '/owner/login': typeof OwnerLoginRoute
+  '/uploads/$': typeof UploadsSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/management/export-listings/$': typeof ApiManagementExportListingsSplatRoute
 }
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/listing/$id': typeof ListingIdRoute
   '/management_/login': typeof ManagementLoginRoute
   '/owner_/login': typeof OwnerLoginRoute
+  '/uploads/$': typeof UploadsSplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/management/export-listings/$': typeof ApiManagementExportListingsSplatRoute
 }
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/listing/$id'
     | '/management/login'
     | '/owner/login'
+    | '/uploads/$'
     | '/api/auth/$'
     | '/api/management/export-listings/$'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/listing/$id'
     | '/management/login'
     | '/owner/login'
+    | '/uploads/$'
     | '/api/auth/$'
     | '/api/management/export-listings/$'
   id:
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/listing/$id'
     | '/management_/login'
     | '/owner_/login'
+    | '/uploads/$'
     | '/api/auth/$'
     | '/api/management/export-listings/$'
   fileRoutesById: FileRoutesById
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   ListingIdRoute: typeof ListingIdRoute
   ManagementLoginRoute: typeof ManagementLoginRoute
   OwnerLoginRoute: typeof OwnerLoginRoute
+  UploadsSplatRoute: typeof UploadsSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiManagementExportListingsSplatRoute: typeof ApiManagementExportListingsSplatRoute
 }
@@ -295,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/uploads/$': {
+      id: '/uploads/$'
+      path: '/uploads/$'
+      fullPath: '/uploads/$'
+      preLoaderRoute: typeof UploadsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner_/login': {
@@ -371,6 +391,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListingIdRoute: ListingIdRoute,
   ManagementLoginRoute: ManagementLoginRoute,
   OwnerLoginRoute: OwnerLoginRoute,
+  UploadsSplatRoute: UploadsSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiManagementExportListingsSplatRoute: ApiManagementExportListingsSplatRoute,
 }

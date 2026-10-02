@@ -18,8 +18,12 @@ export const Route = createFileRoute("/api/upload")({
             return Response.json({ error: "Missing file or userId" }, { status: 400 });
           }
 
-          // Ensure upload directory exists
+          // Ensure upload directories exist
           await mkdir(UPLOAD_DIR, { recursive: true });
+          const distUploadDir = join(process.cwd(), "dist", "client", "uploads");
+          try {
+            await mkdir(distUploadDir, { recursive: true });
+          } catch {}
 
           const ext = file.name.split(".").pop() ?? "jpg";
           const filename = `${userId}-${randomUUID()}.${ext}`;
@@ -27,6 +31,10 @@ export const Route = createFileRoute("/api/upload")({
 
           const buffer = Buffer.from(await file.arrayBuffer());
           await writeFile(filepath, buffer);
+
+          try {
+            await writeFile(join(distUploadDir, filename), buffer);
+          } catch {}
 
           const url = `/uploads/${filename}`;
           return Response.json({ url });

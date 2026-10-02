@@ -301,14 +301,13 @@ export const upsertListing = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-// Save amenity photos for a boarding house (replaces existing for given amenities)
+// Save amenity photos for a boarding house (replaces all existing amenity photos for the listing)
 export const saveAmenityPhotos = createServerFn({ method: "POST" })
   .validator((data: { boardingHouseId: string; photos: { amenityName: string; url: string }[] }) => data)
   .handler(async ({ data }) => {
-    // Remove old photos for the amenities being updated
-    const amenityNames = [...new Set(data.photos.map((p) => p.amenityName))];
+    // Delete all existing amenity photos for this boarding house
     await prisma.amenityPhoto.deleteMany({
-      where: { boardingHouseId: data.boardingHouseId, amenityName: { in: amenityNames } },
+      where: { boardingHouseId: data.boardingHouseId },
     });
     if (data.photos.length > 0) {
       await prisma.amenityPhoto.createMany({
@@ -322,7 +321,28 @@ export const saveAmenityPhotos = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+// Append a single amenity photo (does NOT delete existing ones)
+export const appendAmenityPhoto = createServerFn({ method: "POST" })
+  .validator((data: { boardingHouseId: string; amenityName: string; url: string }) => data)
+  .handler(async ({ data }) => {
+    await prisma.amenityPhoto.create({
+      data: { boardingHouseId: data.boardingHouseId, amenityName: data.amenityName, url: data.url },
+    });
+    return { success: true };
+  });
+
+// Delete a specific amenity photo by URL
+export const deleteAmenityPhoto = createServerFn({ method: "POST" })
+  .validator((data: { boardingHouseId: string; amenityName: string; url: string }) => data)
+  .handler(async ({ data }) => {
+    await prisma.amenityPhoto.deleteMany({
+      where: { boardingHouseId: data.boardingHouseId, amenityName: data.amenityName, url: data.url },
+    });
+    return { success: true };
+  });
+
 export const getAmenityPhotos = createServerFn({ method: "GET" })
+
   .validator((data: { boardingHouseId: string }) => data)
   .handler(async ({ data }) => {
     const rows = await prisma.amenityPhoto.findMany({

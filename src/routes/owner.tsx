@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { toast } from "sonner";
 import { peso, vacancyState, toneClass } from "@/lib/format";
-import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos } from "@/lib/server-fns";
+import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto } from "@/lib/server-fns";
 
 export const Route = createFileRoute("/owner")({
   head: () => ({ meta: [{ title: "Owner Dashboard" }] }),
@@ -515,21 +515,33 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
+      // Update local state
       setAmenityPhotos((prev) => ({
         ...prev,
         [amenityName]: [...(prev[amenityName] ?? []), url],
       }));
+      // If editing an existing listing, append directly to DB
+      if (isEdit && initial?.id) {
+        await appendAmenityPhoto({ data: { boardingHouseId: initial.id, amenityName, url } });
+      }
       toast.success(`Photo added for ${amenityName}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally { setBusy(false); }
   };
 
-  const removeAmenityPhoto = (amenityName: string, idx: number) => {
+  const removeAmenityPhoto = async (amenityName: string, idx: number) => {
+    const photoUrl = amenityPhotos[amenityName]?.[idx];
     setAmenityPhotos((prev) => ({
       ...prev,
       [amenityName]: (prev[amenityName] ?? []).filter((_, i) => i !== idx),
     }));
+    // If editing existing listing, delete from DB immediately
+    if (isEdit && initial?.id && photoUrl) {
+      try {
+        await deleteAmenityPhoto({ data: { boardingHouseId: initial.id, amenityName, url: photoUrl } });
+      } catch {}
+    }
   };
 
   const handleGetLocation = () => {
@@ -799,7 +811,11 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAmenityPhoto(a, f); }}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleAmenityPhoto(a, f);
+                              e.target.value = "";
+                            }}
                           />
                         </label>
                       </div>
