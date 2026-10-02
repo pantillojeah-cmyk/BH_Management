@@ -257,18 +257,16 @@ function Listings() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusStyle}`}>{r.status}</span>
-                  {r.status !== "approved" && (
-                    <Button size="sm" onClick={() => doSetStatus(r.id, "approved")}
-                      className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                    </Button>
-                  )}
-                  {r.status !== "rejected" && (
-                    <Button size="sm" variant="outline" onClick={() => doSetStatus(r.id, "rejected")}
-                      className="gap-1.5 rounded-xl border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30">
-                      <XCircle className="h-3.5 w-3.5" /> Reject
-                    </Button>
-                  )}
+                  <Button size="sm" onClick={() => doSetStatus(r.id, "approved")}
+                    disabled={r.status === "approved"}
+                    className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => doSetStatus(r.id, "rejected")}
+                    disabled={r.status === "rejected"}
+                    className="gap-1.5 rounded-xl border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <XCircle className="h-3.5 w-3.5" /> Reject
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => remove(r.id)}
                     className="gap-1.5 rounded-xl border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800">
                     <Trash2 className="h-3.5 w-3.5" /> Delete
