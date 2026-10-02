@@ -84,8 +84,8 @@ function ImageCarousel({
     );
   }
 
-  const activeRoom = rooms[current] || {
-    name: `Room ${Math.floor(current / 2) + 1} - ${current % 2 === 0 ? "Lower Deck" : "Upper Deck"}`,
+  const activeRoom = rooms[current] || rooms[0] || {
+    name: "Room 1 - Standard Unit",
     isOccupied: false,
     status: "Available",
   };
@@ -98,7 +98,7 @@ function ImageCarousel({
         onClick={() => setIsViewerOpen(true)}
       >
         <img
-          src={images[current]}
+          src={images[current % images.length]}
           alt={`${altText} - ${activeRoom.name}`}
           className={`h-full w-full object-cover transition-all duration-300 ${
             activeRoom.isOccupied ? "brightness-75 contrast-90" : ""
@@ -223,7 +223,7 @@ function ImageCarousel({
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto p-3 scrollbar-thin">
           {images.map((url, i) => {
-            const roomItem = rooms[i];
+            const roomItem = rooms[i % rooms.length];
             return (
               <button
                 key={i}
@@ -233,11 +233,11 @@ function ImageCarousel({
                   if (roomItem?.isOccupied) {
                     toast.error(`"${roomItem.name}" is already occupied or reserved.`);
                   } else {
-                    toast.success(`Selected "${roomItem?.name}"`);
+                    toast.success(`Selected "${roomItem?.name || `Photo ${i + 1}`}"`);
                   }
                 }}
                 className={`relative flex-shrink-0 overflow-hidden rounded-xl transition-all ${
-                  i === current
+                  i === (current % images.length)
                     ? roomItem?.isOccupied
                       ? "ring-4 ring-rose-500 ring-offset-2 ring-offset-background scale-105"
                       : "ring-4 ring-emerald-500 ring-offset-2 ring-offset-background scale-105"
@@ -273,7 +273,7 @@ function ImageCarousel({
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}
         images={images}
-        currentIndex={current}
+        currentIndex={current % images.length}
         onIndexChange={onChange}
         title={altText}
         rooms={rooms}
@@ -400,26 +400,56 @@ function ListingDetail() {
     return Array.from(new Set(arr));
   }, [bh?.cover_photo_url, photos]);
 
-  const rooms: RoomDeckItem[] = useMemo(() => {
-    const total = Math.max(allPhotos.length, 1);
-    const occupiedCount = Math.max(0, (bh?.num_rooms ?? 0) - (bh?.available_vacancies ?? 0));
+  const [localVacancies, setLocalVacancies] = useState<number>(0);
+  useEffect(() => {
+    if (bh) setLocalVacancies(bh.available_vacancies);
+  }, [bh?.available_vacancies]);
 
-    return Array.from({ length: total }, (_, i) => {
+  const rooms: RoomDeckItem[] = useMemo(() => {
+    const numRooms = bh?.num_rooms || 0;
+    const total = Math.max(numRooms, allPhotos.length, 1);
+    const vacancies = Math.max(0, Math.min(total, localVacancies ?? 0));
+
+    const items = Array.from({ length: total }, (_, i) => {
       const roomNum = Math.floor(i / 2) + 1;
-      const deck = i % 2 === 0 ? "Lower Deck" : "Upper Deck";
+      const deck = total === 1 ? "Standard Unit" : (total % 2 !== 0 && i === total - 1 ? "Single Unit" : (i % 2 === 0 ? "Lower Deck" : "Upper Deck"));
       const name = total === 1 ? "Room 1 - Standard Unit" : `Room ${roomNum} - ${deck}`;
       const isReserved = reservedRoomNames.has(name);
-      const isOccupied = isReserved || (occupiedCount > 0 && i >= (total - occupiedCount));
 
       return {
         index: i,
         name,
-        isOccupied,
         isReserved,
-        status: isReserved ? "Reserved" : isOccupied ? "Occupied" : "Available",
+        isOccupied: isReserved,
+        status: isReserved ? "Reserved" : "Available",
       };
     });
-  }, [allPhotos.length, bh?.num_rooms, bh?.available_vacancies, reservedRoomNames]);
+
+    let availableSlotsRemaining = vacancies;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].isReserved) continue;
+      if (availableSlotsRemaining > 0) {
+        items[i].isOccupied = false;
+        items[i].status = "Available";
+        availableSlotsRemaining--;
+      } else {
+        items[i].isOccupied = true;
+        items[i].status = "Occupied";
+      }
+    }
+
+    return items;
+  }, [bh?.num_rooms, localVacancies, allPhotos.length, reservedRoomNames]);
+
+  // Auto-select first available room if currently selected room is occupied
+  useEffect(() => {
+    if (rooms.length > 0 && rooms[currentPhotoIdx]?.isOccupied) {
+      const firstAvail = rooms.findIndex((r) => !r.isOccupied);
+      if (firstAvail >= 0) {
+        setCurrentPhotoIdx(firstAvail);
+      }
+    }
+  }, [rooms, currentPhotoIdx]);
 
   const activeRoom = rooms[currentPhotoIdx] || rooms[0] || {
     index: 0,
@@ -431,7 +461,7 @@ function ListingDetail() {
 
   const doReserve = async () => {
     if (!user || role !== "customer") { toast.error("Sign in as customer to reserve"); return; }
-    if (!bh || bh.available_vacancies === 0) { toast.error("No vacancies available"); return; }
+    if (!bh || localVacancies <= 0) { toast.error("No vacancies available"); return; }
     if (activeRoom.isOccupied) { toast.error(`"${activeRoom.name}" is already occupied or reserved.`); return; }
 
     setReserving(true);
@@ -446,6 +476,7 @@ function ListingDetail() {
       });
       setActiveReservation(res);
       setReservedRoomNames((prev) => new Set([...prev, activeRoom.name]));
+      setLocalVacancies((prev) => Math.max(0, prev - 1));
       const exp = new Date(res.expiresAt);
       toast.success(`Spot reserved for ${activeRoom.name}! Held until ${exp.toLocaleString()}`);
     } catch (e) {
@@ -467,6 +498,7 @@ function ListingDetail() {
           return next;
         });
       }
+      setLocalVacancies((prev) => Math.min(bh?.num_rooms ?? prev + 1, prev + 1));
       setActiveReservation(null);
       toast.success("Reservation cancelled");
     } catch (e) {
@@ -519,7 +551,7 @@ function ListingDetail() {
   };
 
   if (!bh) return <AppShell><div className="p-8 text-center text-muted-foreground">Loading…</div></AppShell>;
-  const state = vacancyState(bh.available_vacancies, bh.num_rooms);
+  const state = vacancyState(localVacancies, bh.num_rooms);
   const cover = bh.cover_photo_url;
 
   return (
@@ -716,7 +748,7 @@ function ListingDetail() {
             </div>
             <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
               <Bed className="h-4 w-4 text-emerald-600" />
-              <span className="font-medium text-foreground">{bh.available_vacancies} of {bh.num_rooms}</span> rooms vacant
+              <span className="font-medium text-foreground">{localVacancies} of {bh.num_rooms}</span> rooms vacant
             </div>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4 text-emerald-600" /> <a href={`tel:${bh.contact_number}`} className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">{bh.contact_number}</a>
@@ -797,15 +829,15 @@ function ListingDetail() {
                   <Button
                     className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold shadow-md shadow-emerald-600/20 border border-white/20 transition-all hover:scale-[1.01]"
                     onClick={doReserve}
-                    disabled={reserving || bh.available_vacancies === 0 || activeRoom.isOccupied}
+                    disabled={reserving || localVacancies <= 0 || activeRoom.isOccupied}
                   >
                     <CalendarCheck className="mr-2 h-4 w-4" />
                     {reserving
                       ? "Reserving…"
+                      : localVacancies <= 0
+                      ? "No Vacancies"
                       : activeRoom.isOccupied
                       ? `${activeRoom.name} (${activeRoom.status})`
-                      : bh.available_vacancies === 0
-                      ? "No Vacancies"
                       : `Reserve ${activeRoom.name}`}
                   </Button>
                 </div>

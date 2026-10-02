@@ -153,8 +153,8 @@ function LandingPage() {
               <div className="relative aspect-square w-full rounded-3xl overflow-hidden shadow-2xl border border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl p-3">
                 <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/15 via-transparent to-teal-500/10 z-10 pointer-events-none rounded-3xl"></div>
                 <img
-                  src="/hero-realistic.png"
-                  alt="Realistic Philippine boarding house"
+                  src="/hero-realistic.jpg?v=2"
+                  alt="Boarding house"
                   className="h-full w-full object-cover rounded-2xl shadow-inner"
                 />
 

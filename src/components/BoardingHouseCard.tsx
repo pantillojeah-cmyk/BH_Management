@@ -67,18 +67,25 @@ export function BoardingHouseCard({
 }) {
   const { user, role } = useAuth();
   const navigate = useNavigate();
-  const state = vacancyState(bh.available_vacancies, bh.num_rooms);
   const [images, setImages] = useState<string[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [photoIdx, setPhotoIdx] = useState(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [reservedRoomNames, setReservedRoomNames] = useState<Set<string>>(new Set());
   const [reserving, setReserving] = useState(false);
+  const [localVacancies, setLocalVacancies] = useState<number>(bh.available_vacancies);
+
+  useEffect(() => {
+    setLocalVacancies(bh.available_vacancies);
+  }, [bh.available_vacancies]);
+
+  const state = vacancyState(localVacancies, bh.num_rooms);
 
   useEffect(() => {
     const urls = bh.photos?.length ? bh.photos : (bh.cover_photo_url ? [bh.cover_photo_url] : []);
     Promise.all(urls.map(resolvePhoto)).then((resolved) => {
       setImages(resolved.filter(Boolean) as string[]);
-      setCurrentIdx(0);
+      setPhotoIdx(0);
     });
   }, [bh.photos, bh.cover_photo_url]);
 
@@ -95,27 +102,57 @@ export function BoardingHouseCard({
       .catch(() => {});
   }, [bh.id]);
 
-  // Compute room/deck list corresponding to photos
+  // Compute room/deck list corresponding to boarding house capacity & photos
   const rooms = useMemo(() => {
-    const total = Math.max(images.length, 1);
-    const occupiedCount = Math.max(0, bh.num_rooms - bh.available_vacancies);
+    const numRooms = bh.num_rooms || 0;
+    const total = Math.max(numRooms, images.length, 1);
+    const vacancies = Math.max(0, Math.min(total, localVacancies ?? 0));
 
-    return Array.from({ length: total }, (_, i) => {
+    // First pass: create room items and identify already reserved rooms
+    const items = Array.from({ length: total }, (_, i) => {
       const roomNum = Math.floor(i / 2) + 1;
-      const deck = i % 2 === 0 ? "Lower Deck" : "Upper Deck";
+      const deck = total === 1 ? "Standard Unit" : (total % 2 !== 0 && i === total - 1 ? "Single Unit" : (i % 2 === 0 ? "Lower Deck" : "Upper Deck"));
       const name = total === 1 ? "Room 1 - Standard Unit" : `Room ${roomNum} - ${deck}`;
       const isReserved = reservedRoomNames.has(name);
-      const isOccupied = isReserved || (occupiedCount > 0 && i >= (total - occupiedCount));
 
       return {
         index: i,
         name,
-        isOccupied,
         isReserved,
-        status: isReserved ? "Reserved" : isOccupied ? "Occupied" : "Available",
+        isOccupied: isReserved,
+        status: isReserved ? "Reserved" : "Available",
       };
     });
-  }, [images.length, bh.num_rooms, bh.available_vacancies, reservedRoomNames]);
+
+    // Exactly `vacancies` rooms should be Available. The remaining rooms are Occupied.
+    let availableSlotsRemaining = vacancies;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].isReserved) continue;
+      if (availableSlotsRemaining > 0) {
+        items[i].isOccupied = false;
+        items[i].status = "Available";
+        availableSlotsRemaining--;
+      } else {
+        items[i].isOccupied = true;
+        items[i].status = "Occupied";
+      }
+    }
+
+    return items;
+  }, [bh.num_rooms, localVacancies, images.length, reservedRoomNames]);
+
+  // Auto-select first available room if currently selected room is occupied
+  useEffect(() => {
+    if (rooms.length > 0 && rooms[currentIdx]?.isOccupied) {
+      const firstAvail = rooms.findIndex((r) => !r.isOccupied);
+      if (firstAvail >= 0) {
+        setCurrentIdx(firstAvail);
+        if (images.length > 0) {
+          setPhotoIdx(firstAvail % images.length);
+        }
+      }
+    }
+  }, [rooms, currentIdx, images.length]);
 
   const activeRoom = rooms[currentIdx] || rooms[0] || {
     index: 0,
@@ -138,7 +175,7 @@ export function BoardingHouseCard({
       toast.error("Only customers can make room reservations.");
       return;
     }
-    if (activeRoom.isOccupied || activeRoom.isReserved) {
+    if (activeRoom.isOccupied || activeRoom.isReserved || localVacancies <= 0) {
       toast.error(`"${activeRoom.name}" is already occupied or reserved.`);
       return;
     }
@@ -154,6 +191,7 @@ export function BoardingHouseCard({
         },
       });
       setReservedRoomNames((prev) => new Set([...prev, activeRoom.name]));
+      setLocalVacancies((prev) => Math.max(0, prev - 1));
       const exp = new Date(res.expiresAt);
       toast.success(
         `Reserved ${activeRoom.name} successfully! Held until ${exp.toLocaleString()}`
@@ -177,7 +215,7 @@ export function BoardingHouseCard({
         {images.length > 0 ? (
           <>
             <img
-              src={images[currentIdx]}
+              src={images[photoIdx % images.length]}
               alt={`${bh.name} - ${activeRoom.name}`}
               className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${
                 activeRoom.isOccupied ? "brightness-75 contrast-90" : ""
@@ -209,7 +247,7 @@ export function BoardingHouseCard({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setCurrentIdx((i) => (i - 1 + images.length) % images.length);
+                    setPhotoIdx((i) => (i - 1 + images.length) % images.length);
                   }}
                   aria-label="Previous room photo"
                   className="absolute left-2.5 top-1/2 -translate-y-1/2 rounded-full bg-black/60 hover:bg-black/85 text-white p-1.5 shadow-md backdrop-blur-sm transition-all z-20 flex items-center justify-center hover:scale-110"
@@ -221,7 +259,7 @@ export function BoardingHouseCard({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setCurrentIdx((i) => (i + 1) % images.length);
+                    setPhotoIdx((i) => (i + 1) % images.length);
                   }}
                   aria-label="Next room photo"
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full bg-black/60 hover:bg-black/85 text-white p-1.5 shadow-md backdrop-blur-sm transition-all z-20 flex items-center justify-center hover:scale-110"
@@ -238,11 +276,11 @@ export function BoardingHouseCard({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setCurrentIdx(i);
+                        setPhotoIdx(i);
                       }}
                       aria-label={`Select photo ${i + 1}`}
                       className={`h-1.5 rounded-full transition-all ${
-                        i === currentIdx ? "w-4 bg-emerald-400" : "w-1.5 bg-white/50 hover:bg-white/80"
+                        i === (photoIdx % images.length) ? "w-4 bg-emerald-400" : "w-1.5 bg-white/50 hover:bg-white/80"
                       }`}
                     />
                   ))}
@@ -250,7 +288,7 @@ export function BoardingHouseCard({
 
                 {/* Photo Counter */}
                 <div className="absolute bottom-2.5 right-2.5 text-[10px] font-semibold text-white bg-black/60 px-2 py-0.5 rounded shadow z-20 backdrop-blur-sm">
-                  {currentIdx + 1} / {images.length}
+                  {(photoIdx % images.length) + 1} / {images.length}
                 </div>
               </>
             )}
@@ -296,6 +334,9 @@ export function BoardingHouseCard({
               type="button"
               onClick={() => {
                 setCurrentIdx(i);
+                if (images.length > 0) {
+                  setPhotoIdx(i % images.length);
+                }
                 if (r.isOccupied) {
                   toast.error(`"${r.name}" is already occupied or reserved.`);
                 } else {
@@ -368,7 +409,7 @@ export function BoardingHouseCard({
             </div>
             <div className="text-right">
               <span className={`rounded-full border border-white/60 dark:border-white/15 px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-sm ${toneClass[state.tone]}`}>
-                {bh.available_vacancies}/{bh.num_rooms} Vacant
+                {localVacancies}/{bh.num_rooms} Vacant
               </span>
             </div>
           </div>
@@ -377,16 +418,18 @@ export function BoardingHouseCard({
           <Button
             type="button"
             className={`w-full font-semibold shadow-md transition-all text-xs h-9 rounded-xl ${
-              activeRoom.isOccupied
+              activeRoom.isOccupied || localVacancies <= 0
                 ? "bg-muted/70 text-muted-foreground border border-white/30 dark:border-white/10 cursor-not-allowed hover:bg-muted/70"
                 : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 border border-white/30 hover:scale-[1.01] active:scale-[0.99]"
             }`}
-            disabled={activeRoom.isOccupied || reserving}
+            disabled={activeRoom.isOccupied || reserving || localVacancies <= 0}
             onClick={handleReserve}
           >
             <CalendarCheck className="mr-1.5 h-3.5 w-3.5" />
             {reserving
               ? "Reserving…"
+              : localVacancies <= 0
+              ? "Fully Occupied"
               : activeRoom.isOccupied
               ? `${activeRoom.name} (${activeRoom.status})`
               : `Reserve ${activeRoom.name}`}
@@ -399,8 +442,8 @@ export function BoardingHouseCard({
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}
         images={images}
-        currentIndex={currentIdx}
-        onIndexChange={setCurrentIdx}
+        currentIndex={photoIdx % Math.max(images.length, 1)}
+        onIndexChange={setPhotoIdx}
         title={bh.name}
         rooms={rooms}
       />
