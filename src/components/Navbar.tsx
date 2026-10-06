@@ -84,8 +84,15 @@ export function Navbar() {
                 variant="outline"
                 className="rounded-xl border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/70 dark:hover:bg-slate-800/70 shadow-sm"
                 onClick={async () => {
+                  const currentRole = role;
                   await signOut();
-                  navigate({ to: "/" });
+                  if (currentRole === "admin") {
+                    navigate({ to: "/management/login" });
+                  } else if (currentRole === "owner") {
+                    navigate({ to: "/owner/login" });
+                  } else {
+                    navigate({ to: "/" });
+                  }
                 }}
               >
                 <LogOut className="mr-1 h-3.5 w-3.5" /> Sign out
