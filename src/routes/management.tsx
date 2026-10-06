@@ -176,28 +176,6 @@ function Overview() {
         </div>
       </div>
 
-      {/* Pending listings banner */}
-      {stats.pending > 0 ? (
-        <div className="rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-gradient-to-r from-rose-50 to-orange-50 dark:from-rose-950/40 dark:to-orange-950/30 p-5 flex items-center gap-4">
-          <div className="h-11 w-11 rounded-2xl bg-rose-500/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-xl">⏳</span>
-          </div>
-          <div>
-            <div className="font-bold text-rose-700 dark:text-rose-300 text-base">{stats.pending} listing{stats.pending === 1 ? "" : "s"} awaiting approval</div>
-            <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-0.5">Go to the <strong>Listings</strong> tab to review and approve or reject submissions.</p>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20 p-5 flex items-center gap-4">
-          <div className="h-11 w-11 rounded-2xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-xl">✅</span>
-          </div>
-          <div>
-            <div className="font-bold text-emerald-700 dark:text-emerald-300">All listings reviewed</div>
-            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">No listings are currently pending approval.</p>
-          </div>
-        </div>
-      )}
 
       {/* Pending owners banner */}
       {stats.pendingOwners > 0 && (
@@ -1151,14 +1129,14 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
               </div>
 
               {/* Action Buttons: Approve Owner / Reject Owner */}
-              <div className="flex flex-wrap gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2.5 flex-shrink-0 self-start sm:self-center">
                 <Button
                   size="sm"
                   disabled={isBusy}
                   onClick={() => doApproveOwner(row)}
-                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
+                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shadow-emerald-600/30 px-4 h-9"
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <CheckCircle2 className="h-4 w-4" />
                   {isBusy ? "Approving…" : "Approve Owner"}
                 </Button>
                 <Button
@@ -1166,9 +1144,9 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
                   variant="outline"
                   disabled={isBusy}
                   onClick={() => doRejectOwner(row)}
-                  className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                  className="gap-1.5 rounded-xl border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium px-4 h-9"
                 >
-                  <XCircle className="h-3.5 w-3.5" />
+                  <XCircle className="h-4 w-4" />
                   Reject
                 </Button>
               </div>
