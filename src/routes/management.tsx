@@ -44,7 +44,7 @@ import {
   getAdminStats, getAdminListings, setListingStatus, adminDeleteListing,
   getAdminUsers, getVacancyReport,
   adminUpdateUserRole, adminDeleteUser, adminDeleteUsers, adminUpdateUserProfile,
-  getPendingOwners, approveOwner, rejectOwner, approveOwnerAndListings,
+  getPendingOwners, approveOwner, rejectOwner,
 } from "@/lib/server-fns";
 
 export const Route = createFileRoute("/management")({
@@ -1030,8 +1030,6 @@ interface PendingOwnerRow {
   email: string | null;
   phone: string | null;
   createdAt: string;
-  isAccountPending: boolean;
-  hasPendingListings: boolean;
   listings: PendingOwnerListing[];
 }
 
@@ -1054,23 +1052,10 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
   useEffect(() => { reload(); }, []);
 
   const doApproveOwner = async (row: PendingOwnerRow) => {
-    setBusy(`owner-${row.userId}`);
+    setBusy(row.userId);
     try {
       await approveOwner({ data: { roleId: row.roleId, userId: row.userId } });
-      toast.success(`${row.full_name} has been approved as an owner.`);
-      await reload();
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const doApproveAll = async (row: PendingOwnerRow) => {
-    setBusy(`all-${row.userId}`);
-    try {
-      await approveOwnerAndListings({ data: { roleId: row.roleId, userId: row.userId } });
-      toast.success(`${row.full_name} and all uploaded listings have been approved.`);
+      toast.success(`${row.full_name} has been approved! Their uploaded listings are now automatically published.`);
       await reload();
     } catch (e) {
       toast.error((e as Error).message);
@@ -1081,37 +1066,10 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
 
   const doRejectOwner = async (row: PendingOwnerRow) => {
     if (!confirm(`Reject ${row.full_name}'s owner application? Their account will remain but without the owner role.`)) return;
-    setBusy(`owner-${row.userId}`);
+    setBusy(row.userId);
     try {
       await rejectOwner({ data: { roleId: row.roleId, userId: row.userId } });
       toast.success(`${row.full_name}'s application rejected.`);
-      await reload();
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const doApproveListing = async (bhId: string, bhName: string) => {
-    setBusy(`listing-${bhId}`);
-    try {
-      await setListingStatus({ data: { id: bhId, status: "approved" } });
-      toast.success(`"${bhName}" has been approved.`);
-      await reload();
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const doRejectListing = async (bhId: string, bhName: string) => {
-    if (!confirm(`Reject listing "${bhName}"?`)) return;
-    setBusy(`listing-${bhId}`);
-    try {
-      await setListingStatus({ data: { id: bhId, status: "rejected" } });
-      toast.success(`"${bhName}" has been rejected.`);
       await reload();
     } catch (e) {
       toast.error((e as Error).message);
@@ -1132,8 +1090,8 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
     return (
       <div className="mt-4 rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-14 text-center">
         <div className="text-4xl mb-3">🔑</div>
-        <div className="font-semibold text-foreground">No pending owner applications or uploads</div>
-        <div className="text-sm text-muted-foreground mt-1 mb-4">All owner accounts and boarding house listings have been reviewed.</div>
+        <div className="font-semibold text-foreground">No pending owner applications</div>
+        <div className="text-sm text-muted-foreground mt-1 mb-4">All newly registered owner accounts have been reviewed.</div>
         <Button variant="outline" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs">
           <RotateCcw className="h-3.5 w-3.5" />
           Refresh
@@ -1146,7 +1104,7 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
     <div className="mt-4 space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div className="text-sm text-muted-foreground">
-          {rows.length} pending owner application{rows.length === 1 ? "" : "s"} / uploads awaiting review
+          {rows.length} new owner application{rows.length === 1 ? "" : "s"} awaiting approval
         </div>
         <Button variant="ghost" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
           <RotateCcw className="h-3.5 w-3.5" />
@@ -1155,13 +1113,13 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
       </div>
 
       {rows.map((row) => {
-        const isOwnerBusy = busy === `owner-${row.userId}` || busy === `all-${row.userId}`;
+        const isBusy = busy === row.userId;
         return (
           <div
             key={row.userId}
             className="rounded-2xl border border-amber-200/70 dark:border-amber-700/40 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow space-y-4"
           >
-            {/* Header row: Owner info + Overall actions */}
+            {/* Header row: Owner info + Approval buttons */}
             <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-border/50">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-3">
@@ -1173,18 +1131,12 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-base text-foreground">{row.full_name}</span>
-                      {row.isAccountPending ? (
-                        <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 border-amber-300 text-amber-700 dark:text-amber-300">
-                          ⏳ Account Pending
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-700 dark:text-emerald-300">
-                          ✓ Verified Owner
-                        </Badge>
-                      )}
-                      {row.hasPendingListings && (
-                        <Badge variant="outline" className="text-xs bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-700 dark:text-rose-300">
-                          🏠 Pending Upload
+                      <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 border-amber-300 text-amber-700 dark:text-amber-300">
+                        ⏳ Awaiting Approval
+                      </Badge>
+                      {row.listings.length > 0 && (
+                        <Badge variant="outline" className="text-xs bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 text-indigo-700 dark:text-indigo-300">
+                          {row.listings.length} Property Listing{row.listings.length === 1 ? "" : "s"}
                         </Badge>
                       )}
                     </div>
@@ -1198,148 +1150,84 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
                 </div>
               </div>
 
-              {/* Primary Owner Action Buttons */}
+              {/* Action Buttons: Approve Owner / Reject Owner */}
               <div className="flex flex-wrap gap-2 flex-shrink-0">
-                {row.isAccountPending && row.hasPendingListings && (
-                  <Button
-                    size="sm"
-                    disabled={isOwnerBusy}
-                    onClick={() => doApproveAll(row)}
-                    className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {isOwnerBusy ? "Processing…" : "Approve All (Owner & Uploads)"}
-                  </Button>
-                )}
-                {row.isAccountPending && !row.hasPendingListings && (
-                  <Button
-                    size="sm"
-                    disabled={isOwnerBusy}
-                    onClick={() => doApproveOwner(row)}
-                    className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {isOwnerBusy ? "Processing…" : "Approve Owner"}
-                  </Button>
-                )}
-                {row.isAccountPending && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isOwnerBusy}
-                    onClick={() => doRejectOwner(row)}
-                    className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    Reject Account
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  disabled={isBusy}
+                  onClick={() => doApproveOwner(row)}
+                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {isBusy ? "Approving…" : "Approve Owner"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isBusy}
+                  onClick={() => doRejectOwner(row)}
+                  className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  Reject
+                </Button>
               </div>
             </div>
 
-            {/* Boarding House Listings section */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            {/* Boarding House Listings section preview */}
+            {row.listings.length > 0 ? (
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
                   <Home className="h-3.5 w-3.5 text-indigo-500" />
-                  Uploaded Boarding Houses ({row.listings.length})
+                  Uploaded Properties (Auto-published once owner is approved)
                 </div>
-              </div>
-
-              {row.listings.length === 0 ? (
-                <div className="text-xs text-muted-foreground italic bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                  Owner registered but hasn't uploaded any boarding house listings yet.
-                </div>
-              ) : (
                 <div className="space-y-2">
-                  {row.listings.map((bh) => {
-                    const isListingBusy = busy === `listing-${bh.id}`;
-                    return (
-                      <div
-                        key={bh.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700/60"
-                      >
-                        <div className="flex items-center gap-3">
-                          {bh.coverPhotoUrl ? (
-                            <img
-                              src={bh.coverPhotoUrl}
-                              alt={bh.name}
-                              className="h-14 w-14 rounded-lg object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="h-14 w-14 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center flex-shrink-0">
-                              <Building2 className="h-6 w-6 text-indigo-500" />
-                            </div>
-                          )}
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-sm text-foreground">{bh.name}</span>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  bh.status === "approved"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]"
-                                    : bh.status === "pending"
-                                    ? "bg-amber-50 text-amber-700 border-amber-300 text-[10px]"
-                                    : "bg-rose-50 text-rose-700 border-rose-300 text-[10px]"
-                                }
-                              >
-                                {bh.status === "approved" ? "Approved" : bh.status === "pending" ? "Pending Review" : "Rejected"}
-                              </Badge>
-                            </div>
-                            <div className="text-xs text-muted-foreground line-clamp-1">
-                              📍 {bh.address}{bh.landmark ? ` (${bh.landmark})` : ""}
-                            </div>
-                            <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
-                              <span className="font-medium text-foreground">₱{peso(bh.monthlyFee)}/mo</span>
-                              <span>•</span>
-                              <span>{bh.numRooms} rooms</span>
-                              <span>•</span>
-                              <span className="text-emerald-600 dark:text-emerald-400 font-medium">{bh.availableVacancies} vacancies</span>
-                            </div>
+                  {row.listings.map((bh) => (
+                    <div
+                      key={bh.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700/60"
+                    >
+                      <div className="flex items-center gap-3">
+                        {bh.coverPhotoUrl ? (
+                          <img
+                            src={bh.coverPhotoUrl}
+                            alt={bh.name}
+                            className="h-12 w-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="h-5 w-5 text-indigo-500" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-semibold text-sm text-foreground">{bh.name}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1">
+                            📍 {bh.address}{bh.landmark ? ` (${bh.landmark})` : ""}
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
+                            <span className="font-medium text-foreground">₱{peso(bh.monthlyFee)}/mo</span>
+                            <span>•</span>
+                            <span>{bh.numRooms} rooms</span>
+                            <span>•</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{bh.availableVacancies} vacancies</span>
                           </div>
                         </div>
-
-                        {/* Listing actions */}
-                        <div className="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-                          <a
-                            href={`/browse`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center"
-                          >
-                            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground px-2 gap-1">
-                              <ExternalLink className="h-3 w-3" /> View
-                            </Button>
-                          </a>
-                          {bh.status === "pending" && (
-                            <>
-                              <Button
-                                size="sm"
-                                disabled={isListingBusy}
-                                onClick={() => doApproveListing(bh.id, bh.name)}
-                                className="h-7 text-xs gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
-                              >
-                                <Check className="h-3 w-3" /> Approve Listing
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={isListingBusy}
-                                onClick={() => doRejectListing(bh.id, bh.name)}
-                                className="h-7 text-xs gap-1 rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50"
-                              >
-                                <XCircle className="h-3 w-3" /> Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
                       </div>
-                    );
-                  })}
+
+                      <div className="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                        <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300">
+                          ✓ Auto-publishes on approval
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground italic bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                New owner registration. Once approved, the owner will be able to access the Owner Dashboard and post boarding house listings.
+              </div>
+            )}
           </div>
         );
       })}

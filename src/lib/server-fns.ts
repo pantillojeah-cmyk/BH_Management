@@ -284,7 +284,7 @@ export const upsertListing = createServerFn({ method: "POST" })
           amenities: data.amenities, coverPhotoUrl: data.coverPhotoUrl,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
-          status: "pending",
+          status: "approved",
         },
       });
       if (extraPhotos.length > 0) {
@@ -410,14 +410,7 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
     prisma.userRole.count({ where: { role: "owner", isApproved: true } }),
     prisma.userRole.count({ where: { role: "customer" } }),
     prisma.boardingHouse.findMany({ where: { status: "approved" }, select: { availableVacancies: true } }),
-    prisma.user.count({
-      where: {
-        OR: [
-          { roles: { some: { role: "owner", isApproved: false } } },
-          { boardingHouses: { some: { status: "pending" } } },
-        ],
-      },
-    }),
+    prisma.userRole.count({ where: { role: "owner", isApproved: false } }),
   ]);
   const vacancies = allApproved.reduce((s, h) => s + h.availableVacancies, 0);
   return { houses, pending, owners, customers, vacancies, pendingOwners };
@@ -607,23 +600,12 @@ export const getUserRole = createServerFn({ method: "GET" })
 export const getPendingOwners = createServerFn({ method: "GET" }).handler(async () => {
   const users = await prisma.user.findMany({
     where: {
-      OR: [
-        {
-          roles: {
-            some: {
-              role: "owner",
-              isApproved: false,
-            },
-          },
+      roles: {
+        some: {
+          role: "owner",
+          isApproved: false,
         },
-        {
-          boardingHouses: {
-            some: {
-              status: "pending",
-            },
-          },
-        },
-      ],
+      },
     },
     include: {
       roles: {
@@ -645,7 +627,6 @@ export const getPendingOwners = createServerFn({ method: "GET" }).handler(async 
 
   return users.map((u) => {
     const ownerRole = u.roles[0];
-    const isAccountPending = ownerRole ? !ownerRole.isApproved : false;
     const listings = u.boardingHouses.map((h) => ({
       id: h.id,
       name: h.name,
@@ -659,7 +640,6 @@ export const getPendingOwners = createServerFn({ method: "GET" }).handler(async 
       status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
       createdAt: h.createdAt.toISOString(),
     }));
-    const hasPendingListings = listings.some((l) => l.status === "pending");
 
     return {
       roleId: ownerRole?.id ?? null,
@@ -668,8 +648,6 @@ export const getPendingOwners = createServerFn({ method: "GET" }).handler(async 
       email: u.profile?.email ?? u.email ?? null,
       phone: u.profile?.phone ?? null,
       createdAt: (ownerRole?.createdAt ?? u.createdAt).toISOString(),
-      isAccountPending,
-      hasPendingListings,
       listings,
     };
   });
@@ -683,10 +661,16 @@ export const approveOwner = createServerFn({ method: "POST" })
         where: { id: data.roleId },
         data: { isApproved: true },
       });
-    } else if (data.userId) {
+    }
+    if (data.userId) {
       await prisma.userRole.updateMany({
         where: { userId: data.userId, role: "owner" },
         data: { isApproved: true },
+      });
+      // Automatically publish all listings for this newly approved owner
+      await prisma.boardingHouse.updateMany({
+        where: { ownerId: data.userId, status: "pending" },
+        data: { status: "approved" },
       });
     }
     return { success: true };
