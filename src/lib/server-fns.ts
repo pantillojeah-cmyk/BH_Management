@@ -410,7 +410,14 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
     prisma.userRole.count({ where: { role: "owner", isApproved: true } }),
     prisma.userRole.count({ where: { role: "customer" } }),
     prisma.boardingHouse.findMany({ where: { status: "approved" }, select: { availableVacancies: true } }),
-    prisma.userRole.count({ where: { role: "owner", isApproved: false } }),
+    prisma.user.count({
+      where: {
+        OR: [
+          { roles: { some: { role: "owner", isApproved: false } } },
+          { boardingHouses: { some: { status: "pending" } } },
+        ],
+      },
+    }),
   ]);
   const vacancies = allApproved.reduce((s, h) => s + h.availableVacancies, 0);
   return { houses, pending, owners, customers, vacancies, pendingOwners };
@@ -598,44 +605,123 @@ export const getUserRole = createServerFn({ method: "GET" })
   });
 
 export const getPendingOwners = createServerFn({ method: "GET" }).handler(async () => {
-  const roles = await prisma.userRole.findMany({
-    where: { role: "owner", isApproved: false },
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        {
+          roles: {
+            some: {
+              role: "owner",
+              isApproved: false,
+            },
+          },
+        },
+        {
+          boardingHouses: {
+            some: {
+              status: "pending",
+            },
+          },
+        },
+      ],
+    },
+    include: {
+      roles: {
+        where: { role: "owner" },
+      },
+      profile: true,
+      boardingHouses: {
+        include: {
+          photos: {
+            orderBy: { sortOrder: "asc" },
+            take: 1,
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+    orderBy: { createdAt: "desc" },
   });
-  const userIds = roles.map((r) => r.userId);
-  if (userIds.length === 0) return [];
-  const profiles = await prisma.profile.findMany({ where: { id: { in: userIds } } });
-  const users = await prisma.user.findMany({ where: { id: { in: userIds } } });
-  const profMap = new Map(profiles.map((p) => [p.id, p]));
-  const userMap = new Map(users.map((u) => [u.id, u]));
-  return roles.map((r) => {
-    const p = profMap.get(r.userId);
-    const u = userMap.get(r.userId);
+
+  return users.map((u) => {
+    const ownerRole = u.roles[0];
+    const isAccountPending = ownerRole ? !ownerRole.isApproved : false;
+    const listings = u.boardingHouses.map((h) => ({
+      id: h.id,
+      name: h.name,
+      address: h.address,
+      landmark: h.landmark,
+      contactNumber: h.contactNumber,
+      monthlyFee: h.monthlyFee,
+      numRooms: h.numRooms,
+      availableVacancies: h.availableVacancies,
+      coverPhotoUrl: h.coverPhotoUrl ?? h.photos[0]?.url ?? null,
+      status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
+      createdAt: h.createdAt.toISOString(),
+    }));
+    const hasPendingListings = listings.some((l) => l.status === "pending");
+
     return {
-      roleId: r.id,
-      userId: r.userId,
-      full_name: p?.fullName ?? u?.name ?? "—",
-      email: p?.email ?? u?.email ?? null,
-      phone: p?.phone ?? null,
-      createdAt: r.createdAt.toISOString(),
+      roleId: ownerRole?.id ?? null,
+      userId: u.id,
+      full_name: u.profile?.fullName ?? u.name ?? "—",
+      email: u.profile?.email ?? u.email ?? null,
+      phone: u.profile?.phone ?? null,
+      createdAt: (ownerRole?.createdAt ?? u.createdAt).toISOString(),
+      isAccountPending,
+      hasPendingListings,
+      listings,
     };
   });
 });
 
 export const approveOwner = createServerFn({ method: "POST" })
-  .validator((data: { roleId: string }) => data)
+  .validator((data: { roleId?: string | null; userId?: string }) => data)
   .handler(async ({ data }) => {
-    await prisma.userRole.update({
-      where: { id: data.roleId },
-      data: { isApproved: true },
+    if (data.roleId) {
+      await prisma.userRole.update({
+        where: { id: data.roleId },
+        data: { isApproved: true },
+      });
+    } else if (data.userId) {
+      await prisma.userRole.updateMany({
+        where: { userId: data.userId, role: "owner" },
+        data: { isApproved: true },
+      });
+    }
+    return { success: true };
+  });
+
+export const approveOwnerAndListings = createServerFn({ method: "POST" })
+  .validator((data: { userId: string; roleId?: string | null }) => data)
+  .handler(async ({ data }) => {
+    if (data.roleId) {
+      await prisma.userRole.update({
+        where: { id: data.roleId },
+        data: { isApproved: true },
+      });
+    } else {
+      await prisma.userRole.updateMany({
+        where: { userId: data.userId, role: "owner" },
+        data: { isApproved: true },
+      });
+    }
+    await prisma.boardingHouse.updateMany({
+      where: { ownerId: data.userId, status: "pending" },
+      data: { status: "approved" },
     });
     return { success: true };
   });
 
 export const rejectOwner = createServerFn({ method: "POST" })
-  .validator((data: { roleId: string; userId: string }) => data)
+  .validator((data: { roleId?: string | null; userId: string }) => data)
   .handler(async ({ data }) => {
     // Delete the role entry — owner account stays but loses the owner role
-    await prisma.userRole.delete({ where: { id: data.roleId } });
+    if (data.roleId) {
+      await prisma.userRole.delete({ where: { id: data.roleId } });
+    } else {
+      await prisma.userRole.deleteMany({ where: { userId: data.userId, role: "owner" } });
+    }
     return { success: true };
   });
 
