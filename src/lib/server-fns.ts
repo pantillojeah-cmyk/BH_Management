@@ -962,7 +962,6 @@ export const getOwnerRoomStatus = createServerFn({ method: "GET" })
           { status: "pending", expiresAt: { gt: now } },
         ],
       },
-      include: { customer: { select: { name: true, email: true } } },
       select: {
         id: true,
         roomDeck: true,

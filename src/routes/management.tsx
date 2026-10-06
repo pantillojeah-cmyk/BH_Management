@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Building2, Users, UserCheck, Home, CheckCircle2, XCircle, Search,
-  MoreVertical, Edit2, Trash2, Shield, UserCog, Check
+  MoreVertical, Edit2, Trash2, Shield, UserCog, Check, RotateCcw
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PrintButton } from "@/components/ui/print-button";
@@ -53,10 +53,20 @@ export const Route = createFileRoute("/management")({
 function AdminPage() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const refreshPendingCount = async () => {
+    try {
+      const data = await getPendingOwners();
+      setPendingCount(data.length);
+    } catch {}
+  };
+
   useEffect(() => {
     if (loading) return;
     if (!user) navigate({ to: "/management/login" });
     else if (role && role !== "admin") navigate({ to: "/" });
+    else refreshPendingCount();
   }, [user, role, loading, navigate]);
 
   if (!user || role !== "admin") return null;
@@ -81,7 +91,14 @@ function AdminPage() {
               <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 Listings</TabsTrigger>
               <TabsTrigger value="users" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">👥 Users</TabsTrigger>
               <TabsTrigger value="report" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📋 Vacancy Report</TabsTrigger>
-              <TabsTrigger value="pendingowners" className="rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🔑 Pending Owners</TabsTrigger>
+              <TabsTrigger value="pendingowners" className="rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all flex items-center gap-1.5">
+                🔑 Pending Owners
+                {pendingCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-rose-500 rounded-full border border-white/40">
+                    {pendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
               <PrintButton />
@@ -92,7 +109,7 @@ function AdminPage() {
           <TabsContent value="listings"><Listings /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="report"><VacancyReport /></TabsContent>
-          <TabsContent value="pendingowners"><PendingOwnersTab /></TabsContent>
+          <TabsContent value="pendingowners"><PendingOwnersTab onActionDone={refreshPendingCount} /></TabsContent>
         </Tabs>
       </div>
     </AppShell>
@@ -796,7 +813,7 @@ interface PendingOwnerRow {
   createdAt: string;
 }
 
-function PendingOwnersTab() {
+function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
   const [rows, setRows] = useState<PendingOwnerRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -806,6 +823,7 @@ function PendingOwnersTab() {
     try {
       const data = await getPendingOwners();
       setRows(data as PendingOwnerRow[]);
+      onActionDone?.();
     } finally {
       setLoading(false);
     }
@@ -818,7 +836,7 @@ function PendingOwnersTab() {
     try {
       await approveOwner({ data: { roleId: row.roleId } });
       toast.success(`${row.full_name} has been approved as an owner.`);
-      reload();
+      await reload();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -832,7 +850,7 @@ function PendingOwnersTab() {
     try {
       await rejectOwner({ data: { roleId: row.roleId, userId: row.userId } });
       toast.success(`${row.full_name}'s application rejected.`);
-      reload();
+      await reload();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -853,15 +871,25 @@ function PendingOwnersTab() {
       <div className="mt-4 rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-14 text-center">
         <div className="text-4xl mb-3">🔑</div>
         <div className="font-semibold text-foreground">No pending owner applications</div>
-        <div className="text-sm text-muted-foreground mt-1">All owner accounts have been reviewed.</div>
+        <div className="text-sm text-muted-foreground mt-1 mb-4">All owner accounts have been reviewed.</div>
+        <Button variant="outline" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs">
+          <RotateCcw className="h-3.5 w-3.5" />
+          Refresh
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="text-sm text-muted-foreground mb-2">
-        {rows.length} owner application{rows.length === 1 ? "" : "s"} awaiting your review
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-sm text-muted-foreground">
+          {rows.length} owner application{rows.length === 1 ? "" : "s"} awaiting your review
+        </div>
+        <Button variant="ghost" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <RotateCcw className="h-3.5 w-3.5" />
+          Refresh
+        </Button>
       </div>
       {rows.map((row) => {
         const isBusy = busy === row.roleId;

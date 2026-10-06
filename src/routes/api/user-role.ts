@@ -28,6 +28,8 @@ export const Route = createFileRoute("/api/user-role")({
             create: { id: userId, fullName: "New User" },
             update: {},
           });
+          // remove previous roles if any to avoid duplicates
+          await prisma.userRole.deleteMany({ where: { userId } });
           await prisma.userRole.create({
             data: {
               userId,

@@ -64,13 +64,11 @@ function OwnerPage() {
           <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 My Listings</TabsTrigger>
           <TabsTrigger value="inquiries" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">💬 Inquiries</TabsTrigger>
           <TabsTrigger value="reservations" className="rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📅 Reservations</TabsTrigger>
-          <TabsTrigger value="rooms" className="rounded-xl data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🛏 Room Status</TabsTrigger>
         </TabsList>
         <TabsContent value="overview"><OwnerOverview /></TabsContent>
         <TabsContent value="listings"><MyListings /></TabsContent>
         <TabsContent value="inquiries"><OwnerInquiries /></TabsContent>
         <TabsContent value="reservations"><OwnerReservations /></TabsContent>
-        <TabsContent value="rooms"><OwnerRoomManagement /></TabsContent>
       </Tabs>
     </AppShell>
   );
