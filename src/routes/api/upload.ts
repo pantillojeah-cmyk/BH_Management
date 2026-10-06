@@ -29,15 +29,19 @@ export const Route = createFileRoute("/api/upload")({
           const filename = `${userId}-${randomUUID()}.${ext}`;
           const filepath = join(UPLOAD_DIR, filename);
 
-          const buffer = Buffer.from(await file.arrayBuffer());
-          await writeFile(filepath, buffer);
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          const base64 = buffer.toString("base64");
+          const mimeType = file.type || "image/jpeg";
+          const dataUrl = `data:${mimeType};base64,${base64}`;
 
           try {
+            await writeFile(filepath, buffer);
             await writeFile(join(distUploadDir, filename), buffer);
           } catch {}
 
-          const url = `/uploads/${filename}`;
-          return Response.json({ url });
+          return Response.json({ url: dataUrl });
         } catch (e) {
           console.error("Upload error:", e);
           return Response.json({ error: (e as Error).message }, { status: 500 });

@@ -15,6 +15,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContaine
 import { toast } from "sonner";
 import { peso, vacancyState, toneClass } from "@/lib/format";
 import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto } from "@/lib/server-fns";
+import { compressImage } from "@/lib/storage";
 
 export const Route = createFileRoute("/owner")({
   head: () => ({ meta: [{ title: "Owner Dashboard" }] }),
