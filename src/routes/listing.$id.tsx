@@ -605,13 +605,9 @@ function ListingDetail() {
 
             const mapSearchQuery = mapSearchParts.join(", ");
 
-            const mapSrc = hasGps
-              ? `https://maps.google.com/maps?q=${bh.latitude},${bh.longitude}&hl=en&z=17&output=embed`
-              : `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&output=embed&z=16`;
+            const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&output=embed&z=16`;
 
-            const mapsLink = hasGps
-              ? `https://www.google.com/maps?q=${bh.latitude},${bh.longitude}`
-              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
+            const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapSearchQuery)}`;
 
             return (
               <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl overflow-hidden shadow-sm">
@@ -754,57 +750,10 @@ function ListingDetail() {
                 </div>
               </div>
 
-              {/* Room selector if multiple rooms exist */}
-              {rooms.length > 1 && (
-                <div className="mb-3 space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">Select Room:</label>
-                  <select
-                    value={selectedRoomIdx}
-                    onChange={(e) => setSelectedRoomIdx(Number(e.target.value))}
-                    className="w-full rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-slate-800/70 px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
-                  >
-                    {rooms.map((r, i) => (
-                      <option key={i} value={i} disabled={r.isOccupied}>
-                        {r.name} — {r.isOccupied ? (r.isReserved ? "Reserved" : "Occupied") : "Available"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Selected Room Details */}
-              <div className="mb-4 rounded-2xl border border-white/50 dark:border-white/10 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md p-3.5">
-                <div className="text-xs text-muted-foreground">Selected Room:</div>
-                <div className="flex items-center justify-between mt-1">
-                  <div className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                    <BedDouble className="h-4 w-4 text-emerald-600" />
-                    {activeRoom.name}
-                  </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-xs ${
-                      activeRoom.isOccupied
-                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40"
-                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40"
-                    }`}
-                  >
-                    {activeRoom.status}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between pt-1 border-t border-white/40 dark:border-white/5">
-                  <span>Monthly Rate:</span>
-                  <span className="font-bold text-foreground">{peso(bh.monthly_fee)}</span>
-                </div>
-              </div>
-
               {activeReservation ? (
                 <div className="space-y-3">
                   <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-3.5 backdrop-blur-md">
                     <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Your Active Reservation</div>
-                    {activeReservation.roomDeck && (
-                      <div className="text-xs font-bold text-foreground mt-0.5">
-                        {activeReservation.roomDeck}
-                      </div>
-                    )}
                     <div className="mt-1 flex items-center gap-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       <Clock className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
                       <span className="font-mono">{getCountdown(activeReservation.expiresAt)}</span> remaining

@@ -666,9 +666,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
     !address.toLowerCase().includes("philippines") ? "Philippines" : "",
   ].filter(Boolean).join(", ");
 
-  const previewMapSrc = hasValidCoords
-    ? `https://maps.google.com/maps?q=${parsedLat},${parsedLng}&hl=en&z=17&output=embed`
-    : address.trim() || landmark.trim()
+  const previewMapSrc = address.trim() || landmark.trim()
     ? `https://maps.google.com/maps?q=${encodeURIComponent(previewMapQuery)}&output=embed&z=16`
     : "";
 
@@ -749,12 +747,8 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           {previewMapSrc && (
             <div className="mt-2 rounded-lg overflow-hidden border border-border">
               <div className="bg-muted px-3 py-1.5 text-[11px] font-medium flex items-center justify-between text-muted-foreground">
-                <span>{hasValidCoords ? "📍 Live Preview (Exact GPS Pin)" : "🗺️ Live Preview (Landmark + Address Search)"}</span>
-                {hasValidCoords ? (
-                  <span className="text-emerald-600 font-mono text-[10px]">({parsedLat.toFixed(5)}, {parsedLng.toFixed(5)})</span>
-                ) : (
-                  <span className="truncate max-w-[200px]">{previewMapQuery}</span>
-                )}
+                <span>🗺️ Live Preview (Landmark + Address Search)</span>
+                <span className="truncate max-w-[200px]">{previewMapQuery}</span>
               </div>
               <iframe
                 title="Map preview"
