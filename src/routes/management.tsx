@@ -320,6 +320,7 @@ interface UserRow {
   email: string | null;
   phone?: string | null;
   role: string;
+  is_approved?: boolean;
 }
 
 const ROLE_FILTERS = ["all", "customer", "owner", "admin"] as const;
@@ -528,9 +529,16 @@ function UsersTab() {
                     </td>
                     <td className="px-5 py-3.5 text-muted-foreground text-sm">{u.email ?? "—"}</td>
                     <td className="px-5 py-3.5">
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${roleBadgeClass}`}>
-                        {u.role === "admin" ? "🛡 Admin" : u.role === "owner" ? "🏠 Owner" : "👤 Customer"}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${roleBadgeClass}`}>
+                          {u.role === "admin" ? "🛡 Admin" : u.role === "owner" ? "🏠 Owner" : "👤 Customer"}
+                        </span>
+                        {u.role === "owner" && u.is_approved === false && (
+                          <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                            ⏳ Pending
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">

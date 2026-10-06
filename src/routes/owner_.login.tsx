@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Building2, Eye, EyeOff, KeyRound, ArrowLeft, Clock, LogOut, CheckCircle2 } from "lucide-react";
+import { Building2, Eye, EyeOff, KeyRound, ArrowLeft, Clock, LogOut, CheckCircle2, RotateCcw } from "lucide-react";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -252,8 +252,40 @@ function SignUpForm() {
 }
 
 function PendingApprovalScreen({ userName, email }: { userName?: string; email?: string }) {
-  const { signOut } = useAuth();
+  const { signOut, refreshRole, role } = useAuth();
   const navigate = useNavigate();
+  const [checking, setChecking] = useState(false);
+
+  // Synchronize with admin approval in real-time (poll every 5 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      refreshRole();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [refreshRole]);
+
+  useEffect(() => {
+    if (role === "owner") {
+      toast.success("Your owner account has been approved! Redirecting…");
+      navigate({ to: "/owner" });
+    }
+  }, [role, navigate]);
+
+  const handleCheckNow = async () => {
+    setChecking(true);
+    try {
+      await refreshRole();
+      if (role === "owner") {
+        toast.success("Your account has been approved!");
+        navigate({ to: "/owner" });
+      } else {
+        toast.info("Account is still under admin review. Please wait for admin approval.");
+      }
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-amber-50/40 to-indigo-50/30 dark:from-slate-950 dark:via-amber-950/20 dark:to-indigo-950/20 overflow-hidden p-6">
       {/* Background orbs */}
@@ -298,7 +330,7 @@ function PendingApprovalScreen({ userName, email }: { userName?: string; email?:
               </li>
               <li className="flex items-start gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-500" />
-                Once approved, you can log in and post listings
+                Once approved, this page will automatically redirect you
               </li>
             </ul>
           </div>
@@ -310,6 +342,14 @@ function PendingApprovalScreen({ userName, email }: { userName?: string; email?:
           )}
 
           <div className="flex flex-col gap-2 pt-1">
+            <Button
+              className="w-full rounded-xl gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20"
+              disabled={checking}
+              onClick={handleCheckNow}
+            >
+              <RotateCcw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} />
+              {checking ? "Checking approval…" : "Check Approval Status"}
+            </Button>
             <Button
               variant="outline"
               className="w-full rounded-xl gap-2 border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"

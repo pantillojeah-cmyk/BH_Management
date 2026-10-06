@@ -486,6 +486,7 @@ export const getAdminUsers = createServerFn({ method: "GET" }).handler(async () 
       email: p?.email ?? u?.email ?? null,
       phone: p?.phone ?? null,
       role: r.role.toLowerCase(),
+      is_approved: r.isApproved,
     };
   });
 });
