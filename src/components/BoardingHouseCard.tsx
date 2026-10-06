@@ -293,17 +293,7 @@ export function BoardingHouseCard({
               </>
             )}
 
-            {/* Selected Room Badge on Image */}
-            <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
-              <span className={`inline-flex items-center gap-1.5 rounded-full text-white border px-2.5 py-0.5 text-xs font-semibold backdrop-blur-md shadow-md ${
-                activeRoom.isOccupied
-                  ? "bg-rose-950/90 border-rose-400/30 text-rose-200"
-                  : "bg-slate-900/90 border-emerald-400/40 text-emerald-300"
-              }`}>
-                <BedDouble className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Selected: {activeRoom.name}</span>
-              </span>
-            </div>
+
 
             {/* Room Availability Status Overlay Badge */}
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
@@ -325,40 +315,7 @@ export function BoardingHouseCard({
         )}
       </div>
 
-      {/* ── Room Selector Pills ── */}
-      {rooms.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto px-4 py-2.5 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md border-b border-white/50 dark:border-white/10 scrollbar-none">
-          {rooms.map((r, i) => (
-            <button
-              key={r.name}
-              type="button"
-              onClick={() => {
-                setCurrentIdx(i);
-                if (images.length > 0) {
-                  setPhotoIdx(i % images.length);
-                }
-                if (r.isOccupied) {
-                  toast.error(`"${r.name}" is already occupied or reserved.`);
-                } else {
-                  toast.success(`Selected "${r.name}"`);
-                }
-              }}
-              className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 backdrop-blur-md ${
-                i === currentIdx
-                  ? r.isOccupied
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-105 border border-rose-400/50"
-                    : "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-105 border border-emerald-400/50"
-                  : r.isOccupied
-                  ? "bg-muted/60 text-muted-foreground line-through opacity-70 hover:opacity-100 border border-white/20 dark:border-white/5"
-                  : "bg-white/60 dark:bg-slate-800/60 border border-white/60 dark:border-white/10 text-foreground hover:bg-white dark:hover:bg-slate-800"
-              }`}
-            >
-              <span>{r.name}</span>
-              {r.isOccupied && <span className="text-[9px] font-normal text-rose-200">({r.status})</span>}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* ── Card Information ── */}
       <div className="space-y-3 p-4 flex-1 flex flex-col justify-between">
@@ -431,8 +388,8 @@ export function BoardingHouseCard({
               : localVacancies <= 0
               ? "Fully Occupied"
               : activeRoom.isOccupied
-              ? `${activeRoom.name} (${activeRoom.status})`
-              : `Reserve ${activeRoom.name}`}
+              ? "Occupied"
+              : "Reserve"}
           </Button>
         </div>
       </div>

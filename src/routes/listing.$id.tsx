@@ -160,7 +160,7 @@ function ImageCarousel({
               : "bg-slate-900/90 border-emerald-400/40 text-emerald-300"
           }`}>
             <BedDouble className="h-4 w-4 text-emerald-400" />
-            <span>Selected Unit: {activeRoom.name}</span>
+            <span>Reservation</span>
           </span>
         </div>
 
@@ -187,37 +187,7 @@ function ImageCarousel({
         )}
       </div>
 
-      {/* Room Selection Pills */}
-      {rooms.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto p-3 bg-muted/40 border-t border-b border-border scrollbar-none">
-          {rooms.map((r, i) => (
-            <button
-              key={r.name}
-              type="button"
-              onClick={() => {
-                onChange(i);
-                if (r.isOccupied) {
-                  toast.error(`"${r.name}" is already occupied or reserved.`);
-                } else {
-                  toast.success(`Selected "${r.name}"`);
-                }
-              }}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                i === current
-                  ? r.isOccupied
-                    ? "bg-rose-600 text-white shadow scale-105"
-                    : "bg-emerald-600 text-white shadow scale-105"
-                  : r.isOccupied
-                  ? "bg-muted text-muted-foreground line-through opacity-70 hover:opacity-100"
-                  : "bg-background border border-border text-foreground hover:bg-accent"
-              }`}
-            >
-              <span>{r.name}</span>
-              {r.isOccupied && <span className="text-[10px] text-rose-200 font-normal">({r.status})</span>}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* Thumbnail strip */}
       {images.length > 1 && (
@@ -255,7 +225,7 @@ function ImageCarousel({
                 <span className={`absolute bottom-1 left-1 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-xs font-semibold ${
                   roomItem?.isOccupied ? "bg-rose-900/80" : "bg-black/75"
                 }`}>
-                  {roomItem?.name || `Unit ${i + 1}`}
+                  Reservation
                 </span>
                 {roomItem?.isOccupied && (
                   <span className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5 shadow">
@@ -918,8 +888,8 @@ function ListingDetail() {
                       : localVacancies <= 0
                       ? "No Vacancies"
                       : activeRoom.isOccupied
-                      ? `${activeRoom.name} (${activeRoom.status})`
-                      : `Reserve ${activeRoom.name}`}
+                      ? "Occupied"
+                      : "Reserve"}
                   </Button>
                 </div>
               )}
