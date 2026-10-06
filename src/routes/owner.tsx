@@ -694,17 +694,31 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
                 Set exact GPS coordinates so guests see the precise location of your boarding house.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleGetLocation}
-              disabled={locating}
-              className="h-8 gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
-            >
-              <Crosshair className="h-3.5 w-3.5" />
-              {locating ? "Locating…" : "Use My Current GPS"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGetLocation}
+                disabled={locating}
+                className="h-8 gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+              >
+                <Crosshair className="h-3.5 w-3.5" />
+                {locating ? "Locating…" : "Use My Current GPS"}
+              </Button>
+              {hasValidCoords && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setLatitude(""); setLongitude(""); toast.success("GPS cleared. Map will now use the address."); }}
+                  className="h-8 gap-1.5 text-xs text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear GPS
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
