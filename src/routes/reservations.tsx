@@ -97,7 +97,7 @@ function ReservationsPage() {
         <div className="glass-card rounded-3xl border border-dashed border-white/60 dark:border-white/10 p-12 text-center backdrop-blur-xl">
           <CalendarCheck className="mx-auto h-12 w-12 text-emerald-600/40 mb-3" />
           <p className="text-base font-semibold text-foreground">You have no reservations yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Browse boarding houses and reserve a room deck in advance.</p>
+          <p className="text-xs text-muted-foreground mt-1">Browse boarding houses and reserve a room in advance.</p>
           <Link to="/browse">
             <Button className="mt-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white shadow-md shadow-emerald-600/20 border border-white/20">
               <Home className="mr-2 h-4 w-4" /> Browse Listings

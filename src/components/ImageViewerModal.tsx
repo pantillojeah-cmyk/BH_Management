@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, BedDouble, Lock, CheckCircle2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface ImageViewerModalProps {
   isOpen: boolean;
@@ -8,11 +8,6 @@ export interface ImageViewerModalProps {
   currentIndex: number;
   onIndexChange: (index: number) => void;
   title?: string;
-  rooms?: Array<{
-    name: string;
-    status: string;
-    isOccupied: boolean;
-  }>;
 }
 
 export function ImageViewerModal({
@@ -22,7 +17,6 @@ export function ImageViewerModal({
   currentIndex,
   onIndexChange,
   title,
-  rooms,
 }: ImageViewerModalProps) {
   const prev = useCallback(() => {
     if (images.length <= 1) return;
@@ -47,8 +41,6 @@ export function ImageViewerModal({
 
   if (!isOpen || images.length === 0) return null;
 
-  const currentRoom = rooms?.[currentIndex];
-
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-black/95 p-4 sm:p-6 backdrop-blur-md select-none animate-in fade-in duration-200"
@@ -61,23 +53,6 @@ export function ImageViewerModal({
       >
         <div className="flex flex-col min-w-0 pr-4">
           {title && <h3 className="text-base sm:text-lg font-bold truncate text-white">{title}</h3>}
-          {currentRoom && (
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-300">
-              <span className="flex items-center gap-1 font-medium text-emerald-400">
-                <BedDouble className="h-3.5 w-3.5" />
-                {currentRoom.name}
-              </span>
-              <span>·</span>
-              <span
-                className={`font-semibold flex items-center gap-1 ${
-                  currentRoom.isOccupied ? "text-rose-400" : "text-emerald-400"
-                }`}
-              >
-                {currentRoom.isOccupied ? <Lock className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-                {currentRoom.status}
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -149,11 +124,6 @@ export function ImageViewerModal({
               }`}
             >
               <img src={imgUrl} alt={`Thumb ${i + 1}`} className="h-12 w-16 object-cover" />
-              {rooms?.[i]?.isOccupied && (
-                <span className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full p-0.5">
-                  <Lock className="h-2 w-2" />
-                </span>
-              )}
             </button>
           ))}
         </div>

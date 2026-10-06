@@ -214,7 +214,7 @@ function LandingPage() {
               {
                 icon: Building2,
                 title: "Real-Time Vacancy",
-                desc: "No more dead ends or wasted trips. See exactly how many rooms and decks are available before inquiring.",
+                desc: "No more dead ends or wasted trips. See exactly how many rooms are available before inquiring.",
                 color: "text-blue-600 bg-blue-500/15 border-blue-500/30",
               },
             ].map((feature, idx) => (

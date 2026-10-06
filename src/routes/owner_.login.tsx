@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Building2, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import { Building2, Eye, EyeOff, KeyRound, ArrowLeft, Clock, LogOut, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,14 @@ function OwnerAuthPage() {
     if (user && role) {
       if (role === "admin") navigate({ to: "/management" });
       else if (role === "owner") navigate({ to: "/owner" });
-      else navigate({ to: "/browse" });
+      // pending_owner stays on this page to see the waiting screen
+      else if (role !== "pending_owner") navigate({ to: "/browse" });
     }
   }, [user, role, navigate]);
+
+  if (user && role === "pending_owner") {
+    return <PendingApprovalScreen userName={user.name} email={user.email} />;
+  }
 
   return (
     <div className="relative grid min-h-screen lg:grid-cols-2 overflow-hidden bg-background/50">
@@ -63,7 +68,7 @@ function OwnerAuthPage() {
           <p className="text-indigo-100/90 leading-relaxed text-sm">Reach more students, manage vacancies in real-time, and handle inquiries securely from one intuitive dashboard.</p>
           <ul className="space-y-2.5 text-sm text-indigo-100">
             <li className="flex items-center gap-2">• List and showcase your rooms with photos</li>
-            <li className="flex items-center gap-2">• Instantly update vacancy counts & room decks</li>
+            <li className="flex items-center gap-2">• Instantly update vacancy counts & rooms</li>
             <li className="flex items-center gap-2">• Review reservations and verify tenant holds</li>
           </ul>
         </div>
@@ -196,7 +201,7 @@ function SignUpForm() {
       });
     }
     setBusy(false);
-    toast.success("Owner account created — you're signed in.");
+    toast.success("Owner account created — awaiting admin approval.");
     setFullName("");
     setEmail("");
     setPhone("");
@@ -205,6 +210,9 @@ function SignUpForm() {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4">
+      <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 p-3 text-xs text-amber-700 dark:text-amber-300">
+        ⏳ After registration, your account will be reviewed by the admin before you can access the Owner Dashboard.
+      </div>
       <div>
         <Label htmlFor="su-name">Full name</Label>
         <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
@@ -240,5 +248,86 @@ function SignUpForm() {
       </div>
       <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={busy}>{busy ? "Creating…" : "Create owner account"}</Button>
     </form>
+  );
+}
+
+function PendingApprovalScreen({ userName, email }: { userName?: string; email?: string }) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  return (
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-amber-50/40 to-indigo-50/30 dark:from-slate-950 dark:via-amber-950/20 dark:to-indigo-950/20 overflow-hidden p-6">
+      {/* Background orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-[30rem] w-[30rem] rounded-full bg-amber-400/10 blur-[120px] animate-pulse-glow" />
+        <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-indigo-400/10 blur-[120px] animate-float-slow" />
+      </div>
+
+      <div className="w-full max-w-lg text-center space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <img src="/logo.png" alt="Logo" className="h-16 w-16 rounded-full object-cover border-2 border-amber-400/40 shadow-xl" />
+        </div>
+
+        {/* Main card */}
+        <div className="rounded-3xl border border-amber-200/60 dark:border-amber-700/40 bg-white/80 dark:bg-slate-800/70 backdrop-blur-2xl p-8 shadow-2xl space-y-5">
+          {/* Animated clock icon */}
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-300 dark:border-amber-600 shadow-lg">
+            <Clock className="h-10 w-10 text-amber-600 dark:text-amber-400 animate-spin" style={{ animationDuration: "4s" }} />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Account Pending Approval</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {userName ? `Hi ${userName}!` : "Hi there!"} Your owner account has been submitted.
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 p-4 text-left space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              What happens next?
+            </div>
+            <ul className="text-xs text-amber-700/80 dark:text-amber-300/80 space-y-1.5 ml-6">
+              <li className="flex items-start gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-500" />
+                Your registration has been received
+              </li>
+              <li className="flex items-start gap-1.5">
+                <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-500" />
+                Admin will review and approve your account
+              </li>
+              <li className="flex items-start gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-500" />
+                Once approved, you can log in and post listings
+              </li>
+            </ul>
+          </div>
+
+          {email && (
+            <p className="text-xs text-muted-foreground">
+              Registered as: <span className="font-semibold text-foreground">{email}</span>
+            </p>
+          )}
+
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              variant="outline"
+              className="w-full rounded-xl gap-2 border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+              onClick={async () => {
+                await signOut();
+                navigate({ to: "/owner/login" });
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          If you have been waiting for a long time, please contact your campus administrator.
+        </p>
+      </div>
+    </div>
   );
 }

@@ -9,7 +9,12 @@ export const Route = createFileRoute("/api/user-role")({
         const userId = url.searchParams.get("userId");
         if (!userId) return Response.json({ role: null });
         const role = await prisma.userRole.findFirst({ where: { userId } });
-        return Response.json({ role: role ? role.role.toLowerCase() : null });
+        if (!role) return Response.json({ role: null });
+        // Unapproved owners see a special pending role
+        if (role.role === "owner" && !role.isApproved) {
+          return Response.json({ role: "pending_owner" });
+        }
+        return Response.json({ role: role.role.toLowerCase() });
       },
       POST: async ({ request }: { request: Request }) => {
         try {
@@ -24,7 +29,12 @@ export const Route = createFileRoute("/api/user-role")({
             update: {},
           });
           await prisma.userRole.create({
-            data: { userId, role: role as any },
+            data: {
+              userId,
+              role: role as any,
+              // New owner accounts require admin approval
+              isApproved: role !== "owner",
+            },
           });
           return Response.json({ success: true });
         } catch (e) {
@@ -34,3 +44,4 @@ export const Route = createFileRoute("/api/user-role")({
     },
   },
 });
+

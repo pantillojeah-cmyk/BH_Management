@@ -118,12 +118,13 @@ model Profile {
 }
 
 model UserRole {
-  id        String   @id @default(cuid())
-  userId    String
-  role      AppRole
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  role       AppRole
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_roles")
 }

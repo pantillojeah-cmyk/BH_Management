@@ -42,6 +42,7 @@ import {
   getAdminStats, getAdminListings, setListingStatus, adminDeleteListing,
   getAdminUsers, getVacancyReport,
   adminUpdateUserRole, adminDeleteUser, adminUpdateUserProfile,
+  getPendingOwners, approveOwner, rejectOwner,
 } from "@/lib/server-fns";
 
 export const Route = createFileRoute("/management")({
@@ -75,11 +76,12 @@ function AdminPage() {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <Tabs defaultValue="overview" className="flex-1">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-            <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1">
+            <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1 flex-wrap">
               <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📊 Overview</TabsTrigger>
               <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 Listings</TabsTrigger>
               <TabsTrigger value="users" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">👥 Users</TabsTrigger>
               <TabsTrigger value="report" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📋 Vacancy Report</TabsTrigger>
+              <TabsTrigger value="pendingowners" className="rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🔑 Pending Owners</TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
               <PrintButton />
@@ -90,6 +92,7 @@ function AdminPage() {
           <TabsContent value="listings"><Listings /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="report"><VacancyReport /></TabsContent>
+          <TabsContent value="pendingowners"><PendingOwnersTab /></TabsContent>
         </Tabs>
       </div>
     </AppShell>
@@ -97,7 +100,7 @@ function AdminPage() {
 }
 
 function Overview() {
-  const [stats, setStats] = useState({ houses: 0, owners: 0, customers: 0, vacancies: 0, pending: 0 });
+  const [stats, setStats] = useState({ houses: 0, owners: 0, customers: 0, vacancies: 0, pending: 0, pendingOwners: 0 });
   useEffect(() => {
     getAdminStats().then((data) => setStats(data));
   }, []);
@@ -154,7 +157,7 @@ function Overview() {
         </div>
       </div>
 
-      {/* Pending banner */}
+      {/* Pending listings banner */}
       {stats.pending > 0 ? (
         <div className="rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-gradient-to-r from-rose-50 to-orange-50 dark:from-rose-950/40 dark:to-orange-950/30 p-5 flex items-center gap-4">
           <div className="h-11 w-11 rounded-2xl bg-rose-500/20 flex items-center justify-center flex-shrink-0">
@@ -173,6 +176,19 @@ function Overview() {
           <div>
             <div className="font-bold text-emerald-700 dark:text-emerald-300">All listings reviewed</div>
             <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">No listings are currently pending approval.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Pending owners banner */}
+      {stats.pendingOwners > 0 && (
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/30 p-5 flex items-center gap-4">
+          <div className="h-11 w-11 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-xl">🔑</span>
+          </div>
+          <div>
+            <div className="font-bold text-amber-700 dark:text-amber-300 text-base">{stats.pendingOwners} owner account{stats.pendingOwners === 1 ? "" : "s"} awaiting approval</div>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">Go to the <strong>Pending Owners</strong> tab to approve or reject new owner registrations.</p>
           </div>
         </div>
       )}
@@ -769,3 +785,139 @@ function VacancyReport() {
     </div>
   );
 } // End of file
+
+// ─── Pending Owners Tab ───────────────────────────────────────────────────────
+interface PendingOwnerRow {
+  roleId: string;
+  userId: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  createdAt: string;
+}
+
+function PendingOwnersTab() {
+  const [rows, setRows] = useState<PendingOwnerRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const reload = async () => {
+    setLoading(true);
+    try {
+      const data = await getPendingOwners();
+      setRows(data as PendingOwnerRow[]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { reload(); }, []);
+
+  const doApprove = async (row: PendingOwnerRow) => {
+    setBusy(row.roleId);
+    try {
+      await approveOwner({ data: { roleId: row.roleId } });
+      toast.success(`${row.full_name} has been approved as an owner.`);
+      reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doReject = async (row: PendingOwnerRow) => {
+    if (!confirm(`Reject ${row.full_name}'s owner application? Their account will remain but without the owner role.`)) return;
+    setBusy(row.roleId);
+    try {
+      await rejectOwner({ data: { roleId: row.roleId, userId: row.userId } });
+      toast.success(`${row.full_name}'s application rejected.`);
+      reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mt-4 flex items-center justify-center py-16 text-muted-foreground">
+        <span className="mr-2 text-lg animate-spin">⏳</span> Loading pending applications…
+      </div>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className="mt-4 rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-14 text-center">
+        <div className="text-4xl mb-3">🔑</div>
+        <div className="font-semibold text-foreground">No pending owner applications</div>
+        <div className="text-sm text-muted-foreground mt-1">All owner accounts have been reviewed.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="text-sm text-muted-foreground mb-2">
+        {rows.length} owner application{rows.length === 1 ? "" : "s"} awaiting your review
+      </div>
+      {rows.map((row) => {
+        const isBusy = busy === row.roleId;
+        return (
+          <div
+            key={row.roleId}
+            className="rounded-2xl border border-amber-200/70 dark:border-amber-700/40 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                {/* Avatar placeholder + name */}
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-300 dark:border-amber-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-base font-bold text-amber-700 dark:text-amber-300">
+                      {row.full_name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-bold text-base text-foreground">{row.full_name}</div>
+                    <div className="text-xs text-muted-foreground">{row.email ?? "No email"}</div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1 ml-[52px]">
+                  {row.phone && (
+                    <span>📞 {row.phone}</span>
+                  )}
+                  <span>📅 Applied {new Date(row.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  size="sm"
+                  disabled={isBusy}
+                  onClick={() => doApprove(row)}
+                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {isBusy ? "Processing…" : "Approve"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isBusy}
+                  onClick={() => doReject(row)}
+                  className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  Reject
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

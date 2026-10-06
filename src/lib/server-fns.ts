@@ -404,15 +404,16 @@ export const updateInquiryStatus = createServerFn({ method: "POST" })
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
 export const getAdminStats = createServerFn({ method: "GET" }).handler(async () => {
-  const [houses, pending, owners, customers, allApproved] = await Promise.all([
+  const [houses, pending, owners, customers, allApproved, pendingOwners] = await Promise.all([
     prisma.boardingHouse.count(),
     prisma.boardingHouse.count({ where: { status: "pending" } }),
-    prisma.userRole.count({ where: { role: "owner" } }),
+    prisma.userRole.count({ where: { role: "owner", isApproved: true } }),
     prisma.userRole.count({ where: { role: "customer" } }),
     prisma.boardingHouse.findMany({ where: { status: "approved" }, select: { availableVacancies: true } }),
+    prisma.userRole.count({ where: { role: "owner", isApproved: false } }),
   ]);
   const vacancies = allApproved.reduce((s, h) => s + h.availableVacancies, 0);
-  return { houses, pending, owners, customers, vacancies };
+  return { houses, pending, owners, customers, vacancies, pendingOwners };
 });
 
 export const getAdminListings = createServerFn({ method: "GET" })
@@ -497,6 +498,7 @@ export const adminUpdateUserRole = createServerFn({ method: "POST" })
       data: {
         userId: data.userId,
         role: data.role as any,
+        isApproved: true, // Admin-assigned roles are pre-approved
       },
     });
     return { success: true };
@@ -547,6 +549,7 @@ export const adminUpdateUserProfile = createServerFn({ method: "POST" })
       data: {
         userId: data.userId,
         role: data.role as any,
+        isApproved: true, // Admin-assigned roles are pre-approved
       },
     });
 
@@ -570,7 +573,52 @@ export const getUserRole = createServerFn({ method: "GET" })
   .validator((data: { userId: string }) => data)
   .handler(async ({ data }) => {
     const role = await prisma.userRole.findFirst({ where: { userId: data.userId } });
-    return role ? role.role.toLowerCase() : null;
+    if (!role) return null;
+    // Unapproved owners cannot access the system yet
+    if (role.role === "owner" && !role.isApproved) return "pending_owner";
+    return role.role.toLowerCase();
+  });
+
+export const getPendingOwners = createServerFn({ method: "GET" }).handler(async () => {
+  const roles = await prisma.userRole.findMany({
+    where: { role: "owner", isApproved: false },
+  });
+  const userIds = roles.map((r) => r.userId);
+  if (userIds.length === 0) return [];
+  const profiles = await prisma.profile.findMany({ where: { id: { in: userIds } } });
+  const users = await prisma.user.findMany({ where: { id: { in: userIds } } });
+  const profMap = new Map(profiles.map((p) => [p.id, p]));
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  return roles.map((r) => {
+    const p = profMap.get(r.userId);
+    const u = userMap.get(r.userId);
+    return {
+      roleId: r.id,
+      userId: r.userId,
+      full_name: p?.fullName ?? u?.name ?? "—",
+      email: p?.email ?? u?.email ?? null,
+      phone: p?.phone ?? null,
+      createdAt: r.createdAt.toISOString(),
+    };
+  });
+});
+
+export const approveOwner = createServerFn({ method: "POST" })
+  .validator((data: { roleId: string }) => data)
+  .handler(async ({ data }) => {
+    await prisma.userRole.update({
+      where: { id: data.roleId },
+      data: { isApproved: true },
+    });
+    return { success: true };
+  });
+
+export const rejectOwner = createServerFn({ method: "POST" })
+  .validator((data: { roleId: string; userId: string }) => data)
+  .handler(async ({ data }) => {
+    // Delete the role entry — owner account stays but loses the owner role
+    await prisma.userRole.delete({ where: { id: data.roleId } });
+    return { success: true };
   });
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
@@ -654,9 +702,9 @@ export const createReservation = createServerFn({ method: "POST" })
   .validator((data: { boardingHouseId: string; customerId: string; roomDeck?: string; price?: number }) => data)
   .handler(async ({ data }) => {
     const now = new Date();
-    const roomDeck = data.roomDeck || "Room 1 - Lower Deck";
+    const roomDeck = data.roomDeck || "Room 1";
 
-    // Check if the specific room/deck is already reserved or confirmed
+    // Check if the specific room is already reserved or confirmed
     const roomTaken = await prisma.reservation.findFirst({
       where: {
         boardingHouseId: data.boardingHouseId,
@@ -668,7 +716,7 @@ export const createReservation = createServerFn({ method: "POST" })
       },
     });
     if (roomTaken) {
-      throw new Error(`The room/deck "${roomDeck}" is already reserved or occupied.`);
+      throw new Error(`The room "${roomDeck}" is already reserved or occupied.`);
     }
 
     // Check if user already has an active reservation for this listing
@@ -697,12 +745,22 @@ export const createReservation = createServerFn({ method: "POST" })
     try {
       const bh = await prisma.boardingHouse.findUnique({
         where: { id: data.boardingHouseId },
-        select: { availableVacancies: true },
+        select: { numRooms: true },
       });
-      if (bh && bh.availableVacancies > 0) {
+      if (bh) {
+        const occupiedCount = await prisma.reservation.count({
+          where: {
+            boardingHouseId: data.boardingHouseId,
+            OR: [
+              { status: "confirmed" },
+              { status: "pending", expiresAt: { gt: now } },
+            ],
+          },
+        });
+        const newVacancies = Math.max(0, bh.numRooms - occupiedCount);
         await prisma.boardingHouse.update({
           where: { id: data.boardingHouseId },
-          data: { availableVacancies: bh.availableVacancies - 1 },
+          data: { availableVacancies: newVacancies },
         });
       }
     } catch {}
@@ -714,6 +772,7 @@ export const createReservation = createServerFn({ method: "POST" })
       expiresAt: reservation.expiresAt.toISOString(),
     };
   });
+
 
 export const getCustomerReservations = createServerFn({ method: "GET" })
   .validator((data: { customerId: string }) => data)
@@ -820,14 +879,25 @@ export const cancelReservation = createServerFn({ method: "POST" })
     });
     if (res) {
       try {
+        const now = new Date();
         const bh = await prisma.boardingHouse.findUnique({
           where: { id: res.boardingHouseId },
-          select: { availableVacancies: true, numRooms: true },
+          select: { numRooms: true },
         });
-        if (bh && bh.availableVacancies < bh.numRooms) {
+        if (bh) {
+          const occupiedCount = await prisma.reservation.count({
+            where: {
+              boardingHouseId: res.boardingHouseId,
+              OR: [
+                { status: "confirmed" },
+                { status: "pending", expiresAt: { gt: now } },
+              ],
+            },
+          });
+          const newVacancies = Math.max(0, bh.numRooms - occupiedCount);
           await prisma.boardingHouse.update({
             where: { id: res.boardingHouseId },
-            data: { availableVacancies: bh.availableVacancies + 1 },
+            data: { availableVacancies: newVacancies },
           });
         }
       } catch {}
@@ -835,12 +905,164 @@ export const cancelReservation = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+
 export const confirmReservation = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data }) => {
-    await prisma.reservation.update({
+    const res = await prisma.reservation.update({
       where: { id: data.id },
       data: { status: "confirmed" },
     });
+    // Recompute available_vacancies
+    try {
+      const now = new Date();
+      const bh = await prisma.boardingHouse.findUnique({
+        where: { id: res.boardingHouseId },
+        select: { numRooms: true },
+      });
+      if (bh) {
+        const occupiedCount = await prisma.reservation.count({
+          where: {
+            boardingHouseId: res.boardingHouseId,
+            OR: [
+              { status: "confirmed" },
+              { status: "pending", expiresAt: { gt: now } },
+            ],
+          },
+        });
+        const newVacancies = Math.max(0, bh.numRooms - occupiedCount);
+        await prisma.boardingHouse.update({
+          where: { id: res.boardingHouseId },
+          data: { availableVacancies: newVacancies },
+        });
+      }
+    } catch {}
+    return { success: true };
+  });
+
+
+// ─── Owner Room Management (Walk-in) ─────────────────────────────────────────
+
+export const getOwnerRoomStatus = createServerFn({ method: "GET" })
+  .validator((data: { boardingHouseId: string }) => data)
+  .handler(async ({ data }) => {
+    const now = new Date();
+    const bh = await prisma.boardingHouse.findUnique({
+      where: { id: data.boardingHouseId },
+      select: { numRooms: true, availableVacancies: true },
+    });
+    if (!bh) throw new Error("Boarding house not found");
+
+    // Get all active reservations for this boarding house
+    const activeReservations = await prisma.reservation.findMany({
+      where: {
+        boardingHouseId: data.boardingHouseId,
+        OR: [
+          { status: "confirmed" },
+          { status: "pending", expiresAt: { gt: now } },
+        ],
+      },
+      include: { customer: { select: { name: true, email: true } } },
+      select: {
+        id: true,
+        roomDeck: true,
+        status: true,
+        customerId: true,
+        customer: { select: { name: true, email: true } },
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
+
+    const rooms = Array.from({ length: bh.numRooms }, (_, i) => {
+      const roomName = `Room ${i + 1}`;
+      const reservation = activeReservations.find(r => r.roomDeck === roomName);
+      return {
+        index: i,
+        name: roomName,
+        isOccupied: !!reservation,
+        status: reservation
+          ? (reservation.status === "confirmed" ? "Confirmed" : "Reserved (Pending)")
+          : "Available",
+        reservationId: reservation?.id ?? null,
+        customerId: reservation?.customerId ?? null,
+        customerName: (reservation?.customer as { name: string | null; email: string } | undefined)?.name ?? null,
+        customerEmail: (reservation?.customer as { name: string | null; email: string } | undefined)?.email ?? null,
+        isWalkIn: reservation?.status === "confirmed" && !(reservation?.customerId),
+        expiresAt: reservation?.expiresAt?.toISOString() ?? null,
+      };
+    });
+
+    return { rooms, numRooms: bh.numRooms, availableVacancies: bh.availableVacancies };
+  });
+
+export const setRoomOccupiedByOwner = createServerFn({ method: "POST" })
+  .validator((data: { boardingHouseId: string; roomName: string; occupied: boolean; ownerId: string }) => data)
+  .handler(async ({ data }) => {
+    const now = new Date();
+
+    if (data.occupied) {
+      // Mark room as occupied (walk-in) — create a confirmed reservation with a far-future expiry
+      // First check if already occupied
+      const existing = await prisma.reservation.findFirst({
+        where: {
+          boardingHouseId: data.boardingHouseId,
+          roomDeck: data.roomName,
+          OR: [
+            { status: "confirmed" },
+            { status: "pending", expiresAt: { gt: now } },
+          ],
+        },
+      });
+      if (existing) throw new Error(`${data.roomName} is already occupied or reserved.`);
+
+      // Create a confirmed walk-in reservation (expires 1 year from now)
+      const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      await prisma.reservation.create({
+        data: {
+          boardingHouseId: data.boardingHouseId,
+          customerId: data.ownerId, // owner's ID as placeholder for walk-in
+          roomDeck: data.roomName,
+          status: "confirmed",
+          expiresAt,
+        },
+      });
+    } else {
+      // Mark room as available — cancel all active reservations for this room
+      await prisma.reservation.updateMany({
+        where: {
+          boardingHouseId: data.boardingHouseId,
+          roomDeck: data.roomName,
+          OR: [
+            { status: "confirmed" },
+            { status: "pending", expiresAt: { gt: now } },
+          ],
+        },
+        data: { status: "cancelled" },
+      });
+    }
+
+    // Recompute available_vacancies from actual active room count
+    const bh = await prisma.boardingHouse.findUnique({
+      where: { id: data.boardingHouseId },
+      select: { numRooms: true },
+    });
+    if (bh) {
+      const occupiedCount = await prisma.reservation.count({
+        where: {
+          boardingHouseId: data.boardingHouseId,
+          OR: [
+            { status: "confirmed" },
+            { status: "pending", expiresAt: { gt: now } },
+          ],
+        },
+      });
+      const newVacancies = Math.max(0, bh.numRooms - occupiedCount);
+      await prisma.boardingHouse.update({
+        where: { id: data.boardingHouseId },
+        data: { availableVacancies: newVacancies },
+      });
+      return { success: true, availableVacancies: newVacancies };
+    }
     return { success: true };
   });

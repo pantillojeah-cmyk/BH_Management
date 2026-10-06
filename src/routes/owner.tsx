@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Edit, Upload, X, Minus, Share2, Copy, Building, BedDouble, CircleDollarSign, CalendarCheck, Clock, MapPin, Crosshair, Navigation, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Edit, Upload, X, Minus, Share2, Copy, Building, BedDouble, CircleDollarSign, CalendarCheck, Clock, MapPin, Crosshair, Navigation, ExternalLink, ChevronLeft, ChevronRight, CheckCircle2, XCircle, UserCheck, DoorOpen } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { toast } from "sonner";
 import { peso, vacancyState, toneClass } from "@/lib/format";
-import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto } from "@/lib/server-fns";
+import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto, getOwnerRoomStatus, setRoomOccupiedByOwner } from "@/lib/server-fns";
 import { compressImage } from "@/lib/storage";
 
 export const Route = createFileRoute("/owner")({
@@ -38,6 +38,7 @@ function OwnerPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) navigate({ to: "/owner/login" });
+    else if (role === "pending_owner") navigate({ to: "/owner/login" }); // redirect to pending screen
     else if (role && role !== "owner") navigate({ to: "/" });
   }, [user, role, loading, navigate]);
 
@@ -58,16 +59,18 @@ function OwnerPage() {
         </div>
       </div>
       <Tabs defaultValue="overview">
-        <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1">
+        <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1 flex-wrap">
           <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📊 Overview</TabsTrigger>
           <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 My Listings</TabsTrigger>
           <TabsTrigger value="inquiries" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">💬 Inquiries</TabsTrigger>
           <TabsTrigger value="reservations" className="rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📅 Reservations</TabsTrigger>
+          <TabsTrigger value="rooms" className="rounded-xl data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🛏 Room Status</TabsTrigger>
         </TabsList>
         <TabsContent value="overview"><OwnerOverview /></TabsContent>
         <TabsContent value="listings"><MyListings /></TabsContent>
         <TabsContent value="inquiries"><OwnerInquiries /></TabsContent>
         <TabsContent value="reservations"><OwnerReservations /></TabsContent>
+        <TabsContent value="rooms"><OwnerRoomManagement /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -1092,6 +1095,196 @@ function OwnerReservations() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ─── Owner Room Management ────────────────────────────────────────────────────
+interface RoomStatusItem {
+  index: number;
+  name: string;
+  isOccupied: boolean;
+  status: string;
+  reservationId: string | null;
+  customerId: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  expiresAt: string | null;
+}
+
+function OwnerRoomManagement() {
+  const { user } = useAuth();
+  const [listings, setListings] = useState<BHRow[]>([]);
+  const [selectedBH, setSelectedBH] = useState<string>("");
+  const [rooms, setRooms] = useState<RoomStatusItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getOwnerListings({ data: { userId: user.id } }).then((data) => {
+      const approved = (data as BHRow[]).filter((b) => b.status === "approved");
+      setListings(approved);
+      if (approved.length > 0) setSelectedBH(approved[0].id);
+    });
+  }, [user]);
+
+  const loadRooms = async (bhId: string) => {
+    if (!bhId) return;
+    setLoading(true);
+    try {
+      const result = await getOwnerRoomStatus({ data: { boardingHouseId: bhId } }) as { rooms: RoomStatusItem[]; numRooms: number; availableVacancies: number };
+      setRooms(result.rooms);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBH) loadRooms(selectedBH);
+  }, [selectedBH]);
+
+  const toggleRoom = async (room: RoomStatusItem) => {
+    if (!user || !selectedBH) return;
+    setToggling(room.name);
+    try {
+      await setRoomOccupiedByOwner({
+        data: {
+          boardingHouseId: selectedBH,
+          roomName: room.name,
+          occupied: !room.isOccupied,
+          ownerId: user.id,
+        },
+      });
+      toast.success(
+        !room.isOccupied
+          ? `${room.name} marked as Occupied (Walk-in)`
+          : `${room.name} marked as Available`
+      );
+      await loadRooms(selectedBH);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  if (listings.length === 0) {
+    return (
+      <div className="mt-4 rounded-2xl border-2 border-dashed border-violet-200 dark:border-violet-700/40 bg-violet-50/50 dark:bg-violet-950/20 p-12 text-center">
+        <div className="text-4xl mb-3">🛏</div>
+        <div className="font-semibold text-foreground">No approved listings</div>
+        <div className="text-sm text-muted-foreground mt-1">You need an approved listing to manage rooms.</div>
+      </div>
+    );
+  }
+
+  const bhInfo = listings.find(b => b.id === selectedBH);
+  const available = rooms.filter(r => !r.isOccupied).length;
+
+  return (
+    <div className="mt-4 space-y-5">
+      {/* Listing selector */}
+      <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <DoorOpen className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <span className="font-semibold text-foreground">Select Boarding House</span>
+          <select
+            value={selectedBH}
+            onChange={(e) => setSelectedBH(e.target.value)}
+            className="ml-auto rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-400"
+          >
+            {listings.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
+        {bhInfo && (
+          <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1"><BedDouble className="h-4 w-4" /> {bhInfo.num_rooms} total rooms</span>
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <CheckCircle2 className="h-4 w-4" /> {available} available
+            </span>
+            <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold">
+              <XCircle className="h-4 w-4" /> {rooms.length - available} occupied / reserved
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Room grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <span className="animate-spin mr-2 text-lg">⏳</span> Loading rooms…
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {rooms.map((room) => {
+            const isToggling = toggling === room.name;
+            return (
+              <div
+                key={room.name}
+                className={`relative rounded-2xl border-2 p-5 shadow-sm transition-all ${
+                  room.isOccupied
+                    ? "border-rose-300 dark:border-rose-700 bg-rose-50/60 dark:bg-rose-950/25"
+                    : "border-emerald-300 dark:border-emerald-700 bg-emerald-50/60 dark:bg-emerald-950/25"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <BedDouble className={`h-5 w-5 ${room.isOccupied ? "text-rose-500" : "text-emerald-500"}`} />
+                    <span className="font-bold text-sm text-foreground">{room.name}</span>
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      room.isOccupied
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    }`}
+                  >
+                    {room.isOccupied ? room.status : "Available"}
+                  </span>
+                </div>
+
+                {room.isOccupied && room.customerName && (
+                  <div className="mb-3 rounded-xl bg-white/60 dark:bg-slate-800/60 p-2.5 text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                      <UserCheck className="h-3.5 w-3.5 text-blue-500" />
+                      {room.customerName}
+                    </div>
+                    {room.customerEmail && (
+                      <div className="text-muted-foreground truncate">{room.customerEmail}</div>
+                    )}
+                  </div>
+                )}
+
+                <Button
+                  size="sm"
+                  disabled={isToggling}
+                  onClick={() => toggleRoom(room)}
+                  className={`w-full rounded-xl text-xs font-semibold transition-all ${
+                    room.isOccupied
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20"
+                      : "bg-rose-600 hover:bg-rose-700 text-white shadow-sm shadow-rose-600/20"
+                  }`}
+                >
+                  {isToggling
+                    ? "Updating…"
+                    : room.isOccupied
+                    ? "✓ Mark as Available"
+                    : "⊘ Mark as Occupied"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground text-center pt-1">
+        💡 Use this panel to manually manage walk-in occupants. Changes are reflected immediately in the reservation system.
+      </p>
     </div>
   );
 }

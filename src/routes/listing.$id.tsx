@@ -42,17 +42,15 @@ export interface RoomDeckItem {
   status: string;
 }
 
-// ── Image Carousel / Slideshow with Room Selection ─────────────────────────────
+// ── Image Carousel / Slideshow ────────────────────────────────────────────────
 function ImageCarousel({
   images,
   altText,
-  rooms,
   current,
   onChange,
 }: {
   images: string[];
   altText: string;
-  rooms: RoomDeckItem[];
   current: number;
   onChange: (index: number) => void;
 }) {
@@ -84,34 +82,17 @@ function ImageCarousel({
     );
   }
 
-  const activeRoom = rooms[current] || rooms[0] || {
-    name: "Room 1 - Standard Unit",
-    isOccupied: false,
-    status: "Available",
-  };
-
   return (
     <div className="glass-card overflow-hidden rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl shadow-lg">
-      {/* Main image with arrows and room indicator */}
+      {/* Main image with arrows */}
       <div
         className="relative aspect-[16/9] bg-muted group select-none cursor-pointer"
         onClick={() => setIsViewerOpen(true)}
       >
         <img
           src={images[current % images.length]}
-          alt={`${altText} - ${activeRoom.name}`}
-          className={`h-full w-full object-cover transition-all duration-300 ${
-            activeRoom.isOccupied ? "brightness-75 contrast-90" : ""
-          }`}
-        />
-
-        {/* Visual Highlight Ring for Selected Room */}
-        <div
-          className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
-            activeRoom.isOccupied
-              ? "ring-4 ring-rose-500/80 ring-inset bg-rose-950/20"
-              : "ring-4 ring-emerald-500 ring-inset bg-emerald-950/10"
-          }`}
+          alt={`${altText} - Photo ${current + 1}`}
+          className="h-full w-full object-cover transition-all duration-300"
         />
 
         {/* Full screen View Icon Overlay */}
@@ -152,33 +133,6 @@ function ImageCarousel({
           </button>
         )}
 
-        {/* Selected Room Overlay Badge */}
-        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
-          <span className={`inline-flex items-center gap-1.5 rounded-full text-white border px-3 py-1 text-xs sm:text-sm font-semibold backdrop-blur-md shadow-lg ${
-            activeRoom.isOccupied
-              ? "bg-rose-950/90 border-rose-400/30 text-rose-200"
-              : "bg-slate-900/90 border-emerald-400/40 text-emerald-300"
-          }`}>
-            <BedDouble className="h-4 w-4 text-emerald-400" />
-            <span>Reservation</span>
-          </span>
-        </div>
-
-        {/* Status Badge */}
-        <div className="absolute top-3 right-3 z-20">
-          {activeRoom.isOccupied ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600/95 text-white border border-rose-300/40 px-3 py-1 text-xs font-bold backdrop-blur-md shadow-lg">
-              <Lock className="h-3.5 w-3.5" />
-              {activeRoom.status}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white border border-emerald-300/40 px-3 py-1 text-xs font-bold backdrop-blur-md shadow-lg">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Available to Reserve
-            </span>
-          )}
-        </div>
-
         {/* Counter badge */}
         {images.length > 1 && (
           <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm z-20">
@@ -187,54 +141,28 @@ function ImageCarousel({
         )}
       </div>
 
-
-
       {/* Thumbnail strip */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto p-3 scrollbar-thin">
-          {images.map((url, i) => {
-            const roomItem = rooms[i % rooms.length];
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  onChange(i);
-                  if (roomItem?.isOccupied) {
-                    toast.error(`"${roomItem.name}" is already occupied or reserved.`);
-                  } else {
-                    toast.success(`Selected "${roomItem?.name || `Photo ${i + 1}`}"`);
-                  }
-                }}
-                className={`relative flex-shrink-0 overflow-hidden rounded-xl transition-all ${
-                  i === (current % images.length)
-                    ? roomItem?.isOccupied
-                      ? "ring-4 ring-rose-500 ring-offset-2 ring-offset-background scale-105"
-                      : "ring-4 ring-emerald-500 ring-offset-2 ring-offset-background scale-105"
-                    : "opacity-60 hover:opacity-100"
-                }`}
-                aria-label={`Select ${roomItem?.name || `Photo ${i + 1}`}`}
-              >
-                <img
-                  src={url}
-                  alt={`Thumbnail ${i + 1}`}
-                  className={`h-16 w-24 object-cover sm:h-20 sm:w-28 ${
-                    roomItem?.isOccupied ? "brightness-75 contrast-90" : ""
-                  }`}
-                />
-                <span className={`absolute bottom-1 left-1 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-xs font-semibold ${
-                  roomItem?.isOccupied ? "bg-rose-900/80" : "bg-black/75"
-                }`}>
-                  Reservation
-                </span>
-                {roomItem?.isOccupied && (
-                  <span className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5 shadow">
-                    <Lock className="h-2.5 w-2.5" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          {images.map((url, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onChange(i)}
+              className={`relative flex-shrink-0 overflow-hidden rounded-xl transition-all ${
+                i === (current % images.length)
+                  ? "ring-2 ring-emerald-500 ring-offset-2 ring-offset-background scale-105"
+                  : "opacity-60 hover:opacity-100"
+              }`}
+              aria-label={`View photo ${i + 1}`}
+            >
+              <img
+                src={url}
+                alt={`Thumbnail ${i + 1}`}
+                className="h-16 w-24 object-cover sm:h-20 sm:w-28"
+              />
+            </button>
+          ))}
         </div>
       )}
 
@@ -246,7 +174,6 @@ function ImageCarousel({
         currentIndex={current % images.length}
         onIndexChange={onChange}
         title={altText}
-        rooms={rooms}
       />
     </div>
   );
@@ -382,15 +309,14 @@ function ListingDetail() {
     if (bh) setLocalVacancies(bh.available_vacancies);
   }, [bh?.available_vacancies]);
 
-  const rooms: RoomDeckItem[] = useMemo(() => {
-    const numRooms = bh?.num_rooms || 0;
-    const total = Math.max(numRooms, allPhotos.length, 1);
-    const vacancies = Math.max(0, Math.min(total, localVacancies ?? 0));
+  const [selectedRoomIdx, setSelectedRoomIdx] = useState<number>(0);
 
-    const items = Array.from({ length: total }, (_, i) => {
-      const roomNum = Math.floor(i / 2) + 1;
-      const deck = total === 1 ? "Standard Unit" : (total % 2 !== 0 && i === total - 1 ? "Single Unit" : (i % 2 === 0 ? "Lower Deck" : "Upper Deck"));
-      const name = total === 1 ? "Room 1 - Standard Unit" : `Room ${roomNum} - ${deck}`;
+  const rooms: RoomDeckItem[] = useMemo(() => {
+    const numRooms = Math.max(bh?.num_rooms || 1, 1);
+    const vacancies = Math.max(0, Math.min(numRooms, localVacancies ?? 0));
+
+    const items = Array.from({ length: numRooms }, (_, i) => {
+      const name = `Room ${i + 1}`;
       const isReserved = reservedRoomNames.has(name);
 
       return {
@@ -416,21 +342,21 @@ function ListingDetail() {
     }
 
     return items;
-  }, [bh?.num_rooms, localVacancies, allPhotos.length, reservedRoomNames]);
+  }, [bh?.num_rooms, localVacancies, reservedRoomNames]);
 
   // Auto-select first available room if currently selected room is occupied
   useEffect(() => {
-    if (rooms.length > 0 && rooms[currentPhotoIdx]?.isOccupied) {
+    if (rooms.length > 0 && rooms[selectedRoomIdx]?.isOccupied) {
       const firstAvail = rooms.findIndex((r) => !r.isOccupied);
       if (firstAvail >= 0) {
-        setCurrentPhotoIdx(firstAvail);
+        setSelectedRoomIdx(firstAvail);
       }
     }
-  }, [rooms, currentPhotoIdx]);
+  }, [rooms, selectedRoomIdx]);
 
-  const activeRoom = rooms[currentPhotoIdx] || rooms[0] || {
+  const activeRoom = rooms[selectedRoomIdx] || rooms[0] || {
     index: 0,
-    name: "Room 1 - Lower Deck",
+    name: "Room 1",
     isOccupied: false,
     isReserved: false,
     status: "Available",
@@ -545,7 +471,6 @@ function ListingDetail() {
             <ImageCarousel
               images={allPhotos}
               altText={bh.name}
-              rooms={rooms}
               current={currentPhotoIdx}
               onChange={setCurrentPhotoIdx}
             />
@@ -825,13 +750,31 @@ function ListingDetail() {
             <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 shadow-sm">
               <div className="mb-3 flex items-center justify-between font-bold text-sm">
                 <div className="flex items-center gap-2">
-                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Room Selection & Hold
+                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Room Reservation
                 </div>
               </div>
 
+              {/* Room selector if multiple rooms exist */}
+              {rooms.length > 1 && (
+                <div className="mb-3 space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Select Room:</label>
+                  <select
+                    value={selectedRoomIdx}
+                    onChange={(e) => setSelectedRoomIdx(Number(e.target.value))}
+                    className="w-full rounded-xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-slate-800/70 px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                  >
+                    {rooms.map((r, i) => (
+                      <option key={i} value={i} disabled={r.isOccupied}>
+                        {r.name} — {r.isOccupied ? (r.isReserved ? "Reserved" : "Occupied") : "Available"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Selected Room Details */}
               <div className="mb-4 rounded-2xl border border-white/50 dark:border-white/10 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md p-3.5">
-                <div className="text-xs text-muted-foreground">Selected Photo / Unit:</div>
+                <div className="text-xs text-muted-foreground">Selected Room:</div>
                 <div className="flex items-center justify-between mt-1">
                   <div className="font-bold text-sm text-foreground flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4 text-emerald-600" />
@@ -856,7 +799,7 @@ function ListingDetail() {
               {activeReservation ? (
                 <div className="space-y-3">
                   <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-3.5 backdrop-blur-md">
-                    <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Your Active Spot Hold</div>
+                    <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Your Active Reservation</div>
                     {activeReservation.roomDeck && (
                       <div className="text-xs font-bold text-foreground mt-0.5">
                         {activeReservation.roomDeck}
@@ -876,7 +819,7 @@ function ListingDetail() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground leading-relaxed">Hold this specific unit for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Reserve this room for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
                   <Button
                     className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold shadow-md shadow-emerald-600/20 border border-white/20 transition-all hover:scale-[1.01]"
                     onClick={doReserve}
