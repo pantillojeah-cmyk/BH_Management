@@ -92,7 +92,7 @@ function AdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@boarding.com"
-              className="h-11 rounded-xl border-white/10 bg-slate-800/60 backdrop-blur-md text-white placeholder:text-slate-500 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500"
+              className="h-11 rounded-xl border-white/10 bg-slate-50/95 backdrop-blur-md text-slate-900 font-bold placeholder:text-slate-500 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500 focus-visible:bg-white"
               autoComplete="off"
               required
             />
@@ -104,7 +104,7 @@ function AdminLogin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="h-11 rounded-xl border-white/10 bg-slate-800/60 backdrop-blur-md text-white placeholder:text-slate-500 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500"
+              className="h-11 rounded-xl border-white/10 bg-slate-50/95 backdrop-blur-md text-slate-900 font-bold placeholder:text-slate-500 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500 focus-visible:bg-white"
               autoComplete="new-password"
               required
             />
