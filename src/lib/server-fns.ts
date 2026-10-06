@@ -517,6 +517,23 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+export const adminDeleteUsers = createServerFn({ method: "POST" })
+  .validator((data: { userIds: string[] }) => data)
+  .handler(async ({ data }) => {
+    let count = 0;
+    for (const userId of data.userIds) {
+      try {
+        await prisma.user.delete({ where: { id: userId } });
+        count++;
+      } catch {
+        await prisma.userRole.deleteMany({ where: { userId } });
+        await prisma.profile.deleteMany({ where: { id: userId } });
+        count++;
+      }
+    }
+    return { success: true, count };
+  });
+
 export const adminUpdateUserProfile = createServerFn({ method: "POST" })
   .validator((data: { userId: string; fullName: string; email?: string; phone?: string; role: "customer" | "owner" | "admin" }) => data)
   .handler(async ({ data }) => {

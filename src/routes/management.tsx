@@ -2,12 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Building2, Users, UserCheck, Home, CheckCircle2, XCircle, Search,
-  MoreVertical, Edit2, Trash2, Shield, UserCog, Check, RotateCcw
+  MoreVertical, Edit2, Trash2, Shield, UserCog, Check, RotateCcw, CheckSquare
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PrintButton } from "@/components/ui/print-button";
 import { ExportButton } from "@/components/ui/export-button";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,7 +42,7 @@ import { peso } from "@/lib/format";
 import {
   getAdminStats, getAdminListings, setListingStatus, adminDeleteListing,
   getAdminUsers, getVacancyReport,
-  adminUpdateUserRole, adminDeleteUser, adminUpdateUserProfile,
+  adminUpdateUserRole, adminDeleteUser, adminDeleteUsers, adminUpdateUserProfile,
   getPendingOwners, approveOwner, rejectOwner,
 } from "@/lib/server-fns";
 
@@ -347,6 +348,11 @@ function UsersTab() {
   const [deletingUser, setDeletingUser] = useState<UserRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const reloadUsers = async () => {
     setLoading(true);
     try {
@@ -445,6 +451,58 @@ function UsersTab() {
     return matchesSearch && matchesRole;
   });
 
+  const selectableUsers = filtered.filter((u) => u.id !== currentUser?.id);
+  const allSelectableSelected =
+    selectableUsers.length > 0 && selectableUsers.every((u) => selectedIds.includes(u.id));
+  const someSelectableSelected =
+    selectableUsers.some((u) => selectedIds.includes(u.id));
+
+  const toggleSelectAll = () => {
+    if (allSelectableSelected) {
+      const selectableIdSet = new Set(selectableUsers.map((u) => u.id));
+      setSelectedIds((prev) => prev.filter((id) => !selectableIdSet.has(id)));
+    } else {
+      const newIds = new Set([...selectedIds, ...selectableUsers.map((u) => u.id)]);
+      setSelectedIds(Array.from(newIds));
+    }
+  };
+
+  const toggleUser = (userId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const selectByRole = (role: "customer" | "owner" | "both") => {
+    const targetUsers = users.filter((u) => {
+      if (u.id === currentUser?.id) return false;
+      if (role === "both") return u.role === "customer" || u.role === "owner";
+      return u.role === role;
+    });
+    const targetIds = targetUsers.map((u) => u.id);
+    setSelectedIds(Array.from(new Set([...selectedIds, ...targetIds])));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await adminDeleteUsers({ data: { userIds: selectedIds } });
+      toast.success(`${res.count} user(s) deleted successfully`);
+      setSelectedIds([]);
+      setBulkDeleteDialogOpen(false);
+      reloadUsers();
+    } catch (err) {
+      toast.error((err as Error).message || "Failed to delete selected users");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="mt-4 space-y-4">
       {/* Search + filter toolbar */}
@@ -482,11 +540,87 @@ function UsersTab() {
         </span>
       </div>
 
+      {/* Quick Select Buttons & Bulk Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-muted-foreground font-semibold flex items-center gap-1.5 mr-1">
+            <CheckSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            Quick Select:
+          </span>
+          <button
+            type="button"
+            onClick={toggleSelectAll}
+            className={`px-3 py-1.5 rounded-xl border font-medium transition-all ${
+              allSelectableSelected
+                ? "bg-slate-800 text-white border-slate-700 dark:bg-slate-200 dark:text-slate-900 shadow-sm"
+                : "bg-background/80 hover:bg-muted border-border/60 text-foreground"
+            }`}
+          >
+            {allSelectableSelected ? "✓ Deselect All" : "Select All Filtered"}
+          </button>
+          <button
+            type="button"
+            onClick={() => selectByRole("customer")}
+            className="px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium transition-all"
+          >
+            Select All Customers
+          </button>
+          <button
+            type="button"
+            onClick={() => selectByRole("owner")}
+            className="px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-medium transition-all"
+          >
+            Select All Owners
+          </button>
+          <button
+            type="button"
+            onClick={() => selectByRole("both")}
+            className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-medium transition-all"
+          >
+            Select Customers & Owners
+          </button>
+          {selectedIds.length > 0 && (
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+            >
+              Clear selection
+            </button>
+          )}
+        </div>
+
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2.5 animate-in fade-in zoom-in-95 duration-150">
+            <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 px-3 py-1.5 rounded-xl">
+              {selectedIds.length} user{selectedIds.length === 1 ? "" : "s"} selected
+            </span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              className="gap-2 rounded-xl shadow-md shadow-rose-600/20 font-bold px-4"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Selected ({selectedIds.length})
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-sm">
         <table className="w-full text-sm">
           <thead className="border-b border-border/50 text-left text-xs uppercase text-muted-foreground bg-muted/30">
             <tr>
+              <th className="w-12 px-4 py-3.5 text-center">
+                <Checkbox
+                  checked={allSelectableSelected ? true : someSelectableSelected ? "indeterminate" : false}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all users"
+                  title="Select all"
+                />
+              </th>
               <th className="px-5 py-3.5 font-bold tracking-wider">Name</th>
               <th className="px-5 py-3.5 font-bold tracking-wider">Email</th>
               <th className="px-5 py-3.5 font-bold tracking-wider">Role</th>
@@ -496,7 +630,7 @@ function UsersTab() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-10 text-center">
+                <td colSpan={5} className="px-5 py-10 text-center">
                   <div className="text-3xl mb-2">🔍</div>
                   <div className="font-medium text-foreground">{users.length === 0 ? "No users yet" : "No users match your search"}</div>
                   <div className="text-xs text-muted-foreground mt-1">{users.length > 0 ? "Try a different search term or filter" : "Users will appear here once they sign up"}</div>
@@ -505,6 +639,7 @@ function UsersTab() {
             ) : (
               filtered.map((u) => {
                 const isCurrent = u.id === currentUser?.id;
+                const isSelected = selectedIds.includes(u.id);
                 const roleBadgeClass =
                   u.role === "admin"
                     ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700"
@@ -513,7 +648,23 @@ function UsersTab() {
                     : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700";
 
                 return (
-                  <tr key={u.id} className="border-t border-border/40 hover:bg-muted/30 dark:hover:bg-white/5 transition-colors">
+                  <tr
+                    key={u.id}
+                    className={`border-t border-border/40 transition-colors ${
+                      isSelected
+                        ? "bg-rose-50/70 dark:bg-rose-950/30"
+                        : "hover:bg-muted/30 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <td className="w-12 px-4 py-3.5 text-center">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleUser(u.id)}
+                        disabled={isCurrent}
+                        title={isCurrent ? "Cannot delete your own admin account" : `Select ${u.full_name}`}
+                        aria-label={`Select ${u.full_name}`}
+                      />
+                    </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -712,6 +863,51 @@ function UsersTab() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeleting}>
               {isDeleting ? "Deleting..." : "Confirm Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={(open) => !open && setBulkDeleteDialogOpen(false)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Delete {selectedIds.length} Users
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete these <strong className="text-foreground">{selectedIds.length}</strong> selected user accounts? This action will permanently remove their accounts, credentials, profiles, and associated records. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* List preview of selected users */}
+          <div className="max-h-52 overflow-y-auto rounded-xl border border-border/60 bg-muted/40 p-2.5 space-y-1.5 my-2">
+            {users
+              .filter((u) => selectedIds.includes(u.id))
+              .map((u) => (
+                <div key={u.id} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-background/90 border border-border/40">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-semibold text-foreground truncate">{u.full_name}</span>
+                    <span className="text-muted-foreground truncate">({u.email ?? "No email"})</span>
+                  </div>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    u.role === "admin" ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40"
+                    : u.role === "owner" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-900/40"
+                  }`}>
+                    {u.role}
+                  </span>
+                </div>
+              ))}
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)} disabled={isBulkDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={isBulkDeleting} className="gap-2">
+              {isBulkDeleting ? "Deleting..." : `Yes, Delete ${selectedIds.length} Users`}
             </Button>
           </DialogFooter>
         </DialogContent>
