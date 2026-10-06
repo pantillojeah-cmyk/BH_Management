@@ -126,7 +126,7 @@ function SignInForm() {
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-4">
+    <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
       <div>
         <Label htmlFor="si-email">Email</Label>
         <Input id="si-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="off" required />
@@ -198,10 +198,10 @@ function SignUpForm() {
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-4">
+    <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
       <div>
         <Label htmlFor="su-name">Full name</Label>
-        <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+        <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="off" />
       </div>
       <div>
         <Label htmlFor="su-email">Email</Label>
@@ -209,7 +209,7 @@ function SignUpForm() {
       </div>
       <div>
         <Label htmlFor="su-phone">Phone (optional)</Label>
-        <Input id="su-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9xx xxx xxxx" />
+        <Input id="su-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9xx xxx xxxx" autoComplete="off" />
       </div>
       <div>
         <Label htmlFor="su-pass">Password</Label>
