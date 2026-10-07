@@ -22,7 +22,7 @@ export const Route = createFileRoute("/owner")({
   component: OwnerPage,
 });
 
-const AMENITY_OPTIONS = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator", "Common Room", "Garden", "Curfew"];
+const AMENITY_OPTIONS = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator", "Common Room", "Garden"];
 
 interface BHRow {
   id: string; name: string; address: string; landmark: string | null; contact_number: string;
