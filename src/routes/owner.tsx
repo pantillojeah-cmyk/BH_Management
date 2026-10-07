@@ -85,10 +85,25 @@ function OwnerOverview() {
   const totalListings = rows.length;
   const totalRooms = rows.reduce((acc, r) => acc + r.num_rooms, 0);
   const totalVacancies = rows.reduce((acc, r) => acc + r.available_vacancies, 0);
-  const totalOccupied = Math.max(0, totalRooms - totalVacancies);
+  const totalOccupiedRooms = Math.max(0, totalRooms - totalVacancies);
+
+  // Total active tenants based on occupied rooms and their capacity
+  const totalOccupiedTenants = rows.reduce((acc, r) => {
+    const occupied = Math.max(0, r.num_rooms - r.available_vacancies);
+    const capacity = r.room_capacity && r.room_capacity > 0 ? r.room_capacity : 1;
+    return acc + (occupied * capacity);
+  }, 0);
+
+  // Accurate estimated revenue calculation:
+  // - For per_room: occupied rooms * monthly fee
+  // - For per_person (bed spacer): occupied rooms * room capacity * monthly fee
   const estimatedRevenue = rows.reduce((acc, r) => {
     const occupied = Math.max(0, r.num_rooms - r.available_vacancies);
-    return acc + (occupied * r.monthly_fee);
+    const capacity = r.room_capacity && r.room_capacity > 0 ? r.room_capacity : 1;
+    if (r.price_type === "per_room") {
+      return acc + (occupied * r.monthly_fee);
+    }
+    return acc + (occupied * capacity * r.monthly_fee);
   }, 0);
 
   return ( <>
@@ -136,7 +151,7 @@ function OwnerOverview() {
         </div>
         <div className="text-2xl font-bold text-rose-700 dark:text-rose-200">{peso(estimatedRevenue)}</div>
         <div className="mt-1 text-xs text-rose-500 dark:text-rose-400">
-          Based on {totalOccupied} occupied {totalOccupied === 1 ? "slot / tenant" : "slots / tenants"}
+          Based on {totalOccupiedTenants} occupied {totalOccupiedTenants === 1 ? "tenant / bed" : "tenants / beds"} ({totalOccupiedRooms} {totalOccupiedRooms === 1 ? "room" : "rooms"})
         </div>
       </div>
     </div>
