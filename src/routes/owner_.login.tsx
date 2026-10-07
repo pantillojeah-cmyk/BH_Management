@@ -118,6 +118,16 @@ function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+    const timer = setTimeout(() => {
+      setEmail("");
+      setPassword("");
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -140,9 +150,23 @@ function SignInForm() {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
+      {/* Hidden decoy inputs to absorb browser autofill */}
+      <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
+        <input type="text" name="fake_username_autofill" tabIndex={-1} autoComplete="username" />
+        <input type="password" name="fake_password_autofill" tabIndex={-1} autoComplete="current-password" />
+      </div>
+
       <div>
         <Label htmlFor="si-email">Email</Label>
-        <Input id="si-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@example.com" required autoComplete="off" />
+        <Input
+          id="si-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="owner@example.com"
+          required
+          autoComplete="new-password"
+        />
       </div>
       <div>
         <Label htmlFor="si-pass">Password</Label>
@@ -179,6 +203,18 @@ function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setPassword("");
+    const timer = setTimeout(() => {
+      setEmail("");
+      setPassword("");
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -210,20 +246,26 @@ function SignUpForm() {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
+      {/* Hidden decoy inputs to absorb browser autofill */}
+      <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
+        <input type="text" name="fake_username_autofill" tabIndex={-1} autoComplete="username" />
+        <input type="password" name="fake_password_autofill" tabIndex={-1} autoComplete="current-password" />
+      </div>
+
       <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 p-3 text-xs text-amber-700 dark:text-amber-300">
         ⏳ After registration, your account will be reviewed by the admin before you can access the Owner Dashboard.
       </div>
       <div>
         <Label htmlFor="su-name">Full name</Label>
-        <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="off" />
+        <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="new-password" />
       </div>
       <div>
         <Label htmlFor="su-email">Email</Label>
-        <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="off" />
+        <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="new-password" />
       </div>
       <div>
         <Label htmlFor="su-phone">Phone (optional)</Label>
-        <Input id="su-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9xx xxx xxxx" autoComplete="off" />
+        <Input id="su-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9xx xxx xxxx" autoComplete="new-password" />
       </div>
       <div>
         <Label htmlFor="su-pass">Password</Label>
@@ -235,6 +277,7 @@ function SignUpForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="pr-10"
             required
+            autoComplete="new-password"
           />
           <button
             type="button"

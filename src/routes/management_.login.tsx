@@ -22,6 +22,16 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+    const timer = setTimeout(() => {
+      setEmail("");
+      setPassword("");
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -86,6 +96,12 @@ function AdminLogin() {
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
+          {/* Hidden decoy inputs to absorb browser autofill */}
+          <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
+            <input type="text" name="fake_username_autofill" tabIndex={-1} autoComplete="username" />
+            <input type="password" name="fake_password_autofill" tabIndex={-1} autoComplete="current-password" />
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email address</label>
             <Input
@@ -94,7 +110,7 @@ function AdminLogin() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@boarding.com"
               className="h-11 rounded-xl border-white/10 bg-slate-50/95 backdrop-blur-md text-slate-900 font-bold placeholder:text-slate-500 focus-visible:ring-indigo-500/40 focus-visible:border-indigo-500 focus-visible:bg-white"
-              autoComplete="off"
+              autoComplete="new-password"
               required
             />
           </div>
