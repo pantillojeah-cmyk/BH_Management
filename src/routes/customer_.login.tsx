@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { updateProfile } from "@/lib/server-fns";
+import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 
 export const Route = createFileRoute("/customer_/login")({
   head: () => ({ meta: [{ title: "Customer Login — Boarding House Tracker" }] }),
@@ -104,6 +105,7 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   useEffect(() => {
     setEmail("");
@@ -137,6 +139,11 @@ function SignInForm() {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        role="customer"
+      />
       {/* Hidden decoy inputs to absorb browser autofill */}
       <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
         <input type="text" name="fake_username_autofill" tabIndex={-1} autoComplete="username" />
@@ -148,7 +155,17 @@ function SignInForm() {
         <Input id="si-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="new-password" required />
       </div>
       <div>
-        <Label htmlFor="si-pass">Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="si-pass">Password</Label>
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(true)}
+            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+            tabIndex={-1}
+          >
+            Forgot password?
+          </button>
+        </div>
         <div className="relative">
           <Input
             id="si-pass"

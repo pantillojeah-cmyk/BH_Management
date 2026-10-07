@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prisma } from "@/lib/db";
+import { randomBytes, scrypt } from "node:crypto";
 
 // ─── Boarding Houses ──────────────────────────────────────────────────────────
 
@@ -1169,4 +1170,74 @@ export const setRoomOccupiedByOwner = createServerFn({ method: "POST" })
       return { success: true, availableVacancies: newVacancies };
     }
     return { success: true };
+  });
+
+// ─── Password Reset ─────────────────────────────────────────────────────────
+
+export const resetAccountPassword = createServerFn({ method: "POST" })
+  .validator((data: {
+    email: string;
+    newPassword: string;
+    phone?: string;
+  }) => data)
+  .handler(async ({ data }) => {
+    const email = data.email.trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { profile: true, accounts: true },
+    });
+    if (!user) {
+      throw new Error("No account registered with this email address.");
+    }
+
+    if (data.phone && data.phone.trim()) {
+      const userPhone = user.profile?.phone?.replace(/\D/g, "");
+      const inputPhone = data.phone.trim().replace(/\D/g, "");
+      if (userPhone && inputPhone && !userPhone.includes(inputPhone) && !inputPhone.includes(userPhone)) {
+        throw new Error("Phone number does not match account records.");
+      }
+    }
+
+    if (!data.newPassword || data.newPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters long.");
+    }
+
+    // Hash password using standard Better Auth scrypt parameters
+    const salt = randomBytes(16).toString("hex");
+    const key = await new Promise<Buffer>((resolve, reject) => {
+      scrypt(
+        data.newPassword.normalize("NFKC"),
+        salt,
+        64,
+        { N: 16384, r: 16, p: 1, maxmem: 128 * 16384 * 16 * 2 },
+        (err, derivedKey) => {
+          if (err) reject(err);
+          else resolve(derivedKey as Buffer);
+        }
+      );
+    });
+    const hashedPassword = `${salt}:${key.toString("hex")}`;
+
+    // Update the credential account
+    const existingAccount = await prisma.account.findFirst({
+      where: { userId: user.id },
+    });
+
+    if (existingAccount) {
+      await prisma.account.update({
+        where: { id: existingAccount.id },
+        data: { password: hashedPassword },
+      });
+    } else {
+      await prisma.account.create({
+        data: {
+          userId: user.id,
+          accountId: user.id,
+          providerId: "credential",
+          password: hashedPassword,
+        },
+      });
+    }
+
+    return { success: true, email: user.email };
   });

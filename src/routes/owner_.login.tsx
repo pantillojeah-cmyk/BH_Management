@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { updateProfile } from "@/lib/server-fns";
+import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 
 export const Route = createFileRoute("/owner_/login")({
   head: () => ({ meta: [{ title: "Owner Portal — Boarding House Tracker" }] }),
@@ -117,6 +118,7 @@ function SignInForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   useEffect(() => {
     setEmail("");
@@ -149,49 +151,73 @@ function SignInForm() {
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
-      {/* Hidden decoy inputs to absorb browser autofill */}
-      <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
-        <input type="text" name="fake_username_autofill" tabIndex={-1} autoComplete="username" />
-        <input type="password" name="fake_password_autofill" tabIndex={-1} autoComplete="current-password" />
-      </div>
+    <>
+      <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
+        {/* Hidden decoy inputs to absorb browser autofill */}
+        <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
+          <input type="text" name="fake_username_autofill" tabIndex={-1} autoComplete="username" />
+          <input type="password" name="fake_password_autofill" tabIndex={-1} autoComplete="current-password" />
+        </div>
 
-      <div>
-        <Label htmlFor="si-email">Email</Label>
-        <Input
-          id="si-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="owner@example.com"
-          required
-          autoComplete="new-password"
-        />
-      </div>
-      <div>
-        <Label htmlFor="si-pass">Password</Label>
-        <div className="relative">
+        <div>
+          <Label htmlFor="si-email">Email</Label>
           <Input
-            id="si-pass"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="pr-10"
+            id="si-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="owner@example.com"
             required
             autoComplete="new-password"
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            aria-label={showPassword ? "Hide password" : "Show password"}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
         </div>
-      </div>
-      <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
-    </form>
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <Label htmlFor="si-pass">Password</Label>
+            <button
+              type="button"
+              onClick={() => setForgotOpen(true)}
+              className="text-xs text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 font-medium transition-colors hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+          <div className="relative">
+            <Input
+              id="si-pass"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pr-10"
+              required
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+        <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={busy}>
+          {busy ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+
+      <ForgotPasswordModal
+        open={forgotOpen}
+        onOpenChange={setForgotOpen}
+        defaultEmail={email}
+        title="Owner Password Retrieval"
+        onSuccess={(retrievedEmail) => {
+          setEmail(retrievedEmail);
+          setPassword("");
+        }}
+      />
+    </>
   );
 }
 
