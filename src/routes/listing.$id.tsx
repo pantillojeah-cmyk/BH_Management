@@ -365,7 +365,7 @@ function ListingDetail() {
   const doReserve = async () => {
     if (!user || role !== "customer") { toast.error("Sign in as customer to reserve"); return; }
     if (!bh || localVacancies <= 0) { toast.error("No vacancies available"); return; }
-    if (activeRoom.isOccupied) { toast.error(`"${activeRoom.name}" is already occupied or reserved.`); return; }
+    if (activeRoom.isOccupied) { toast.error("This room is already occupied or reserved."); return; }
 
     setReserving(true);
     try {
@@ -381,7 +381,7 @@ function ListingDetail() {
       setReservedRoomNames((prev) => new Set([...prev, activeRoom.name]));
       setLocalVacancies((prev) => Math.max(0, prev - 1));
       const exp = new Date(res.expiresAt);
-      toast.success(`Spot reserved for ${activeRoom.name}! Held until ${exp.toLocaleString()}`);
+      toast.success(`Spot reserved! Held until ${exp.toLocaleString()}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -746,7 +746,7 @@ function ListingDetail() {
             <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 shadow-sm">
               <div className="mb-3 flex items-center justify-between font-bold text-sm">
                 <div className="flex items-center gap-2">
-                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Room Reservation
+                  <CalendarCheck className="h-4 w-4 text-emerald-600" /> Reservation
                 </div>
               </div>
 
@@ -768,7 +768,7 @@ function ListingDetail() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground leading-relaxed">Reserve this room for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Reserve a spot for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
                   <Button
                     className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold shadow-md shadow-emerald-600/20 border border-white/20 transition-all hover:scale-[1.01]"
                     onClick={doReserve}

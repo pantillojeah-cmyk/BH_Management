@@ -171,7 +171,7 @@ export function BoardingHouseCard({
       setLocalVacancies((prev) => Math.max(0, prev - 1));
       const exp = new Date(res.expiresAt);
       toast.success(
-        `Reserved ${firstAvailableRoom.name} successfully! Held until ${exp.toLocaleString()}`
+        `Reserved successfully! Held until ${exp.toLocaleString()}`
       );
     } catch (err) {
       toast.error((err as Error).message || "Failed to reserve room");
