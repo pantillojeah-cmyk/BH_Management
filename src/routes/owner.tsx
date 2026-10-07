@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
@@ -284,14 +283,11 @@ function OwnerListingCard({
           </>
         )}
 
-        {/* Status Badges */}
+        {/* Vacancy Status Badge */}
         <div className="absolute top-2 right-2 flex gap-2 z-20">
           <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm backdrop-blur-md bg-white/90 dark:bg-slate-900/90 ${toneClass[state.tone]}`}>
             {state.label}
           </span>
-          <Badge variant={r.status === "approved" ? "default" : r.status === "pending" ? "secondary" : "destructive"} className="shadow-sm">
-            {r.status}
-          </Badge>
         </div>
       </div>
 
@@ -666,7 +662,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
       if (bhId && amenityPhotoEntries.length > 0) {
         await saveAmenityPhotos({ data: { boardingHouseId: bhId, photos: amenityPhotoEntries } });
       }
-      toast.success(isEdit ? "Updated" : "Submitted for admin approval");
+      toast.success(isEdit ? "Updated" : "Submitted successfully");
       onSaved();
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusy(false); }
@@ -1012,7 +1008,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={busy}>{busy ? "Saving…" : isEdit ? "Save changes" : "Submit for approval"}</Button>
+        <Button onClick={save} disabled={busy}>{busy ? "Saving…" : isEdit ? "Save changes" : "Submit"}</Button>
       </DialogFooter>
     </DialogContent>
   );
