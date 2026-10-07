@@ -9,6 +9,7 @@ export const getApprovedListings = createServerFn({ method: "GET" }).handler(asy
     select: {
       id: true, name: true, address: true, landmark: true,
       monthlyFee: true, numRooms: true, availableVacancies: true,
+      roomCapacity: true, priceType: true,
       amenities: true, coverPhotoUrl: true, latitude: true, longitude: true,
       reviews: { select: { rating: true } },
       photos: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
@@ -23,7 +24,10 @@ export const getApprovedListings = createServerFn({ method: "GET" }).handler(asy
     return {
       id: h.id, name: h.name, address: h.address, landmark: h.landmark,
       monthly_fee: h.monthlyFee, num_rooms: h.numRooms,
-      available_vacancies: h.availableVacancies, amenities: h.amenities,
+      available_vacancies: h.availableVacancies,
+      room_capacity: h.roomCapacity ?? 1,
+      price_type: h.priceType ?? "per_person",
+      amenities: h.amenities,
       cover_photo_url: h.coverPhotoUrl,
       latitude: h.latitude, longitude: h.longitude,
       photos: h.photos.map(p => p.url),
@@ -80,6 +84,7 @@ export const getListingById = createServerFn({ method: "GET" })
         landmark: bh.landmark, contact_number: bh.contactNumber,
         description: bh.description, monthly_fee: bh.monthlyFee,
         num_rooms: bh.numRooms, available_vacancies: bh.availableVacancies,
+        room_capacity: bh.roomCapacity ?? 1, price_type: bh.priceType ?? "per_person",
         amenities: bh.amenities, cover_photo_url: bh.coverPhotoUrl,
         latitude: bh.latitude, longitude: bh.longitude,
         avg_rating: avgRating, review_count: reviewCount,
@@ -212,7 +217,10 @@ export const getOwnerListings = createServerFn({ method: "GET" })
       id: h.id, name: h.name, address: h.address, landmark: h.landmark,
       contact_number: h.contactNumber, description: h.description,
       monthly_fee: h.monthlyFee, num_rooms: h.numRooms,
-      available_vacancies: h.availableVacancies, amenities: h.amenities,
+      available_vacancies: h.availableVacancies,
+      room_capacity: h.roomCapacity ?? 1,
+      price_type: h.priceType ?? "per_person",
+      amenities: h.amenities,
       cover_photo_url: h.coverPhotoUrl, status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
       latitude: h.latitude, longitude: h.longitude,
       extraPhotos: h.photos.map((p) => p.url),
@@ -247,7 +255,8 @@ export const upsertListing = createServerFn({ method: "POST" })
   .validator((data: {
     id?: string; ownerId: string; name: string; address: string; landmark: string | null;
     contactNumber: string; description: string | null; monthlyFee: number; numRooms: number;
-    availableVacancies: number; amenities: string[]; coverPhotoUrl: string | null;
+    availableVacancies: number; roomCapacity?: number; priceType?: string;
+    amenities: string[]; coverPhotoUrl: string | null;
     latitude?: number | null; longitude?: number | null;
     extraPhotos?: string[];
   }) => data)
@@ -261,7 +270,10 @@ export const upsertListing = createServerFn({ method: "POST" })
           name: data.name, address: data.address, landmark: data.landmark,
           contactNumber: data.contactNumber, description: data.description,
           monthlyFee: data.monthlyFee, numRooms: data.numRooms,
-          availableVacancies: data.availableVacancies, amenities: data.amenities,
+          availableVacancies: data.availableVacancies,
+          roomCapacity: data.roomCapacity !== undefined ? data.roomCapacity : undefined,
+          priceType: data.priceType !== undefined ? data.priceType : undefined,
+          amenities: data.amenities,
           coverPhotoUrl: data.coverPhotoUrl,
           latitude: data.latitude !== undefined ? data.latitude : undefined,
           longitude: data.longitude !== undefined ? data.longitude : undefined,
@@ -281,6 +293,8 @@ export const upsertListing = createServerFn({ method: "POST" })
           landmark: data.landmark, contactNumber: data.contactNumber,
           description: data.description, monthlyFee: data.monthlyFee,
           numRooms: data.numRooms, availableVacancies: data.availableVacancies,
+          roomCapacity: data.roomCapacity ?? 1,
+          priceType: data.priceType ?? "per_person",
           amenities: data.amenities, coverPhotoUrl: data.coverPhotoUrl,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
@@ -445,6 +459,8 @@ export const getAdminListings = createServerFn({ method: "GET" })
       monthly_fee: h.monthlyFee,
       available_vacancies: h.availableVacancies,
       num_rooms: h.numRooms,
+      room_capacity: h.roomCapacity ?? 1,
+      price_type: h.priceType ?? "per_person",
       status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
       owner_id: h.ownerId,
       created_at: h.createdAt.toISOString(),
@@ -577,11 +593,12 @@ export const adminUpdateUserProfile = createServerFn({ method: "POST" })
 export const getVacancyReport = createServerFn({ method: "GET" }).handler(async () => {
   const houses = await prisma.boardingHouse.findMany({
     where: { status: "approved" },
-    select: { name: true, availableVacancies: true, numRooms: true, monthlyFee: true },
+    select: { name: true, availableVacancies: true, numRooms: true, monthlyFee: true, roomCapacity: true, priceType: true },
   });
   return houses.map((h) => ({
     name: h.name, available_vacancies: h.availableVacancies,
     num_rooms: h.numRooms, monthly_fee: h.monthlyFee,
+    room_capacity: h.roomCapacity ?? 1, price_type: h.priceType ?? "per_person",
   }));
 });
 

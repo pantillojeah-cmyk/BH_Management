@@ -195,7 +195,9 @@ function Overview() {
 
 interface AdminBH {
   id: string; name: string; address: string; monthly_fee: number;
-  available_vacancies: number; num_rooms: number; status: "pending" | "approved" | "rejected"; owner_id: string | null;
+  available_vacancies: number; num_rooms: number;
+  room_capacity?: number; price_type?: string;
+  status: "pending" | "approved" | "rejected"; owner_id: string | null;
   created_at: string;
   cover_photo_url: string | null;
   photos: string[];
@@ -261,9 +263,12 @@ function Listings() {
                 <div className="min-w-[200px]">
                   <div className="font-bold text-base text-foreground">{r.name}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{r.address}</div>
-                  <div className="mt-2 flex items-center gap-3 text-xs">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 border border-emerald-200 dark:border-emerald-700 px-2 py-0.5 font-semibold text-emerald-700 dark:text-emerald-300">
-                      ₱{peso(r.monthly_fee).replace('₱','')}/mo
+                      ₱{peso(r.monthly_fee).replace('₱','')}{r.price_type === "per_room" ? "/room" : "/person"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-500/10 border border-indigo-200 dark:border-indigo-700 px-2 py-0.5 font-semibold text-indigo-700 dark:text-indigo-300">
+                      Good for {r.room_capacity ?? 1} {(r.room_capacity ?? 1) === 1 ? "person" : "persons"}
                     </span>
                     <span className="text-muted-foreground">{r.available_vacancies}/{r.num_rooms} slots open</span>
                   </div>

@@ -21,6 +21,8 @@ export interface BHCard {
   monthly_fee: number;
   num_rooms: number;
   available_vacancies: number;
+  room_capacity?: number;
+  price_type?: string;
   amenities: string[];
   cover_photo_url: string | null;
   photos?: string[];
@@ -305,16 +307,23 @@ export function BoardingHouseCard({
         <div className="pt-3 border-t border-white/50 dark:border-white/10 space-y-2.5">
           <div className="flex items-baseline justify-between">
             <div>
-              <div className="text-xs text-muted-foreground">Price per room</div>
+              <div className="text-xs text-muted-foreground">
+                {bh.price_type === "per_room" ? "Price per room" : "Price per person"}
+              </div>
               <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                 {peso(bh.monthly_fee)}
-                <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {bh.price_type === "per_room" ? " / room" : " / person"}
+                </span>
               </div>
             </div>
-            <div className="text-right">
-              <span className={`rounded-full border border-white/60 dark:border-white/15 px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-sm ${toneClass[state.tone]}`}>
+            <div className="text-right space-y-1">
+              <span className={`inline-block rounded-full border border-white/60 dark:border-white/15 px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-sm ${toneClass[state.tone]}`}>
                 {localVacancies}/{bh.num_rooms} Vacant
               </span>
+              <div className="text-[10px] text-muted-foreground font-medium">
+                Good for {bh.room_capacity ?? 1} {(bh.room_capacity ?? 1) === 1 ? "person" : "persons"}
+              </div>
             </div>
           </div>
 

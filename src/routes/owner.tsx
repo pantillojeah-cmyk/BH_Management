@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Edit, Upload, X, Minus, Share2, Copy, Building, BedDouble, CircleDollarSign, CalendarCheck, Clock, MapPin, Crosshair, Navigation, ExternalLink, ChevronLeft, ChevronRight, CheckCircle2, XCircle, UserCheck, DoorOpen } from "lucide-react";
+import { Plus, Trash2, Edit, Upload, X, Minus, Share2, Copy, Building, BedDouble, CircleDollarSign, CalendarCheck, Clock, MapPin, Crosshair, Navigation, ExternalLink, ChevronLeft, ChevronRight, CheckCircle2, XCircle, UserCheck, DoorOpen, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ const AMENITY_OPTIONS = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "K
 interface BHRow {
   id: string; name: string; address: string; landmark: string | null; contact_number: string;
   description: string | null; monthly_fee: number; num_rooms: number; available_vacancies: number;
+  room_capacity?: number; price_type?: string;
   amenities: string[]; cover_photo_url: string | null; status: "pending" | "approved" | "rejected";
   latitude?: number | null; longitude?: number | null;
   extraPhotos?: string[];
@@ -85,7 +86,11 @@ function OwnerOverview() {
   const totalListings = rows.length;
   const totalRooms = rows.reduce((acc, r) => acc + r.num_rooms, 0);
   const totalVacancies = rows.reduce((acc, r) => acc + r.available_vacancies, 0);
-  const estimatedRevenue = rows.reduce((acc, r) => acc + ((r.num_rooms - r.available_vacancies) * r.monthly_fee), 0);
+  const totalOccupied = Math.max(0, totalRooms - totalVacancies);
+  const estimatedRevenue = rows.reduce((acc, r) => {
+    const occupied = Math.max(0, r.num_rooms - r.available_vacancies);
+    return acc + (occupied * r.monthly_fee);
+  }, 0);
 
   return ( <>
     {/* Stat Cards */}
@@ -131,7 +136,9 @@ function OwnerOverview() {
           </div>
         </div>
         <div className="text-2xl font-bold text-rose-700 dark:text-rose-200">{peso(estimatedRevenue)}</div>
-        <div className="mt-1 text-xs text-rose-500 dark:text-rose-400">Based on occupied rooms</div>
+        <div className="mt-1 text-xs text-rose-500 dark:text-rose-400">
+          Based on {totalOccupied} occupied {totalOccupied === 1 ? "slot / tenant" : "slots / tenants"}
+        </div>
       </div>
     </div>
 
@@ -293,9 +300,20 @@ function OwnerListingCard({
           <h3 className="font-bold text-base line-clamp-1 text-foreground">{r.name}</h3>
           <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{r.address}</p>
         </div>
-        <div className="mb-4 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 w-fit">
-          <CircleDollarSign className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{peso(r.monthly_fee)}<span className="text-xs font-normal text-emerald-600/70 dark:text-emerald-400/70"> / mo</span></span>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 w-fit">
+            <CircleDollarSign className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+              {peso(r.monthly_fee)}
+              <span className="text-xs font-normal text-emerald-600/70 dark:text-emerald-400/70">
+                {r.price_type === "per_room" ? " / room" : " / person"}
+              </span>
+            </span>
+          </div>
+          <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+            <Users className="h-3.5 w-3.5" />
+            Good for {r.room_capacity ?? 1} {(r.room_capacity ?? 1) === 1 ? "person" : "persons"}
+          </span>
         </div>
 
         {/* Vacancy stepper */}
@@ -487,6 +505,8 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   const [contact, setContact] = useState(initial?.contact_number ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [fee, setFee] = useState(initial?.monthly_fee?.toString() ?? "");
+  const [priceType, setPriceType] = useState<string>(initial?.price_type ?? "per_person");
+  const [roomCapacity, setRoomCapacity] = useState(initial?.room_capacity?.toString() ?? "2");
   const [rooms, setRooms] = useState(initial?.num_rooms?.toString() ?? "");
   const [vacancies, setVacancies] = useState(initial?.available_vacancies?.toString() ?? "");
   const [amenities, setAmenities] = useState<string[]>(initial?.amenities ?? []);
@@ -630,6 +650,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           landmark: landmark.trim() || null, contactNumber: contact.trim(),
           description: description.trim() || null, monthlyFee: Number(fee) || 0,
           numRooms: Number(rooms) || 0, availableVacancies: Number(vacancies) || 0,
+          roomCapacity: Number(roomCapacity) || 1, priceType,
           amenities, coverPhotoUrl: coverPath, extraPhotos: extraPhotos,
           latitude: latNum, longitude: lngNum,
         },
@@ -762,9 +783,123 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           )}
         </div>
 
-        <div><Label>Monthly fee (₱)</Label><Input type="number" value={fee} onChange={(e) => setFee(e.target.value)} /></div>
+        {/* Pricing & Room Capacity Section */}
+        <div className="sm:col-span-2 rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CircleDollarSign className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm font-bold text-foreground">Rent & Room Capacity</span>
+            </div>
+            <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full">
+              {priceType === "per_room" ? "Per Room" : "Per Person / Bed"}
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label className="text-xs font-semibold">Monthly Rent (₱)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 1000"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold">Pricing Basis</Label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPriceType("per_person")}
+                  className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all text-center ${
+                    priceType === "per_person"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-background border-border hover:bg-muted text-muted-foreground"
+                  }`}
+                >
+                  Per Person / Bed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPriceType("per_room")}
+                  className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all text-center ${
+                    priceType === "per_room"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-background border-border hover:bg-muted text-muted-foreground"
+                  }`}
+                >
+                  Whole Room
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Room Capacity (Good for X persons) */}
+          <div>
+            <Label className="text-xs font-semibold flex items-center justify-between">
+              <span>Room Capacity (Good for)</span>
+              <span className="text-xs text-muted-foreground font-normal">
+                Currently: <strong className="text-foreground">Good for {roomCapacity} {Number(roomCapacity) === 1 ? "person" : "persons"}</strong>
+              </span>
+            </Label>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {[
+                { label: "1 Person (Solo)", value: 1 },
+                { label: "2 Persons (Good for 2)", value: 2 },
+                { label: "3 Persons", value: 3 },
+                { label: "4 Persons (Good for 4)", value: 4 },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setRoomCapacity(opt.value.toString())}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-xl border transition-all ${
+                    Number(roomCapacity) === opt.value
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-sm font-semibold"
+                      : "bg-background border-border hover:bg-muted text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-[11px] text-muted-foreground">Custom:</span>
+                <Input
+                  type="number"
+                  min="1"
+                  max="50"
+                  className="h-8 w-16 text-xs text-center"
+                  value={roomCapacity}
+                  onChange={(e) => setRoomCapacity(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Live Revenue Preview */}
+          {Number(fee) > 0 && (
+            <div className="rounded-xl bg-white/70 dark:bg-slate-900/60 border border-emerald-500/20 p-2.5 text-xs space-y-1">
+              <div className="flex items-center justify-between font-semibold text-emerald-700 dark:text-emerald-300">
+                <span>💡 Revenue Calculation Preview:</span>
+                <span>
+                  {priceType === "per_person"
+                    ? `₱${(Number(fee) * Number(roomCapacity || 1)).toLocaleString()} / month (full room of ${roomCapacity})`
+                    : `₱${Number(fee).toLocaleString()} / month per room`}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {priceType === "per_person"
+                  ? `With rent at ₱${Number(fee).toLocaleString()} per person, a room good for ${roomCapacity} ${Number(roomCapacity) === 1 ? "person" : "persons"} brings in ₱${(Number(fee) * Number(roomCapacity || 1)).toLocaleString()} total per month when fully occupied.`
+                  : `With rent at ₱${Number(fee).toLocaleString()} for the whole room (good for ${roomCapacity} ${Number(roomCapacity) === 1 ? "person" : "persons"}), each occupied room brings ₱${Number(fee).toLocaleString()}/month.`}
+              </p>
+            </div>
+          )}
+        </div>
+
         <div><Label>Number of rooms</Label><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></div>
-        <div><Label>Available vacancies</Label><Input type="number" value={vacancies} onChange={(e) => setVacancies(e.target.value)} /></div>
+        <div><Label>Available vacancies / slots</Label><Input type="number" value={vacancies} onChange={(e) => setVacancies(e.target.value)} /></div>
         <div className="sm:col-span-2"><Label>Description</Label><Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} maxLength={2000} /></div>
         <div className="sm:col-span-2">
           <Label>Amenities</Label>

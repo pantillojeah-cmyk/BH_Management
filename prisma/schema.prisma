@@ -140,6 +140,8 @@ model BoardingHouse {
   monthlyFee         Float
   numRooms           Int                  @default(0)
   availableVacancies Int                  @default(0)
+  roomCapacity       Int                  @default(1)
+  priceType          String               @default("per_person")
   amenities          String[]             @default([])
   coverPhotoUrl      String?
   latitude           Float?

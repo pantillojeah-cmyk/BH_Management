@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Phone, MapPin, Bed, Heart, MessageSquare, ArrowLeft, Star,
-  ChevronLeft, ChevronRight, CalendarCheck, Clock, BedDouble, Lock, CheckCircle2, Maximize2
+  ChevronLeft, ChevronRight, CalendarCheck, Clock, BedDouble, Lock, CheckCircle2, Maximize2, Users
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/listing/$id")({
 interface BH {
   id: string; owner_id: string | null; name: string; address: string; landmark: string | null;
   contact_number: string; description: string | null; monthly_fee: number; num_rooms: number;
-  available_vacancies: number; amenities: string[]; cover_photo_url: string | null;
+  available_vacancies: number; room_capacity?: number; price_type?: string; amenities: string[]; cover_photo_url: string | null;
   latitude?: number | null; longitude?: number | null;
   avg_rating: number | null; review_count: number;
 }
@@ -716,7 +716,15 @@ function ListingDetail() {
           <div className="glass-card rounded-3xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl p-6 shadow-sm">
             <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {peso(bh.monthly_fee)}
-              <span className="text-xs font-normal text-muted-foreground">/month</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {bh.price_type === "per_room" ? " / room / mo" : " / person / mo"}
+              </span>
+            </div>
+            <div className="mt-2.5 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                <Users className="h-3.5 w-3.5" />
+                Good for {bh.room_capacity ?? 1} {(bh.room_capacity ?? 1) === 1 ? "person" : "persons"}
+              </span>
             </div>
             <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
               <Bed className="h-4 w-4 text-emerald-600" />
