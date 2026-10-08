@@ -412,33 +412,15 @@ function MyListings() {
   };
   useEffect(() => { reload(); }, [user]);
 
-  const groupedRows = useMemo(() => {
-    const map = new Map<string, GroupedBHRow>();
-    for (const r of rows) {
-      const key = `${r.name.trim().toLowerCase()}:::${r.address.trim().toLowerCase()}`;
+  const listingRows = useMemo(() => {
+    return rows.map((r) => {
       const rowPhotos = [r.cover_photo_url, ...(r.extraPhotos || [])].filter(Boolean) as string[];
-      const existing = map.get(key);
-      if (!existing) {
-        map.set(key, {
-          ...r,
-          allIds: [r.id],
-          photos: Array.from(new Set(rowPhotos)),
-        });
-      } else {
-        for (const p of rowPhotos) {
-          if (!existing.photos.includes(p)) {
-            existing.photos.push(p);
-          }
-        }
-        if (!existing.allIds.includes(r.id)) {
-          existing.allIds.push(r.id);
-        }
-        if (!existing.cover_photo_url && r.cover_photo_url) {
-          existing.cover_photo_url = r.cover_photo_url;
-        }
-      }
-    }
-    return Array.from(map.values());
+      return {
+        ...r,
+        allIds: [r.id],
+        photos: Array.from(new Set(rowPhotos)),
+      };
+    });
   }, [rows]);
 
   const remove = async (ids: string[]) => {
@@ -479,11 +461,11 @@ function MyListings() {
         </Dialog>
       </div>
 
-      {groupedRows.length === 0 ? (
+      {listingRows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">No listings yet. Click "New listing" to create one.</div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {groupedRows.map((r) => (
+          {listingRows.map((r) => (
             <OwnerListingCard
               key={r.id}
               r={r}

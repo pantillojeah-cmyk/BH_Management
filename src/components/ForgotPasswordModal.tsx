@@ -119,7 +119,13 @@ export function ForgotPasswordModal({
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2" autoComplete="off">
+            {/* Hidden decoy inputs to absorb browser autofill */}
+            <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
+              <input type="text" name="fake_email_autofill" tabIndex={-1} autoComplete="username" />
+              <input type="password" name="fake_password_autofill" tabIndex={-1} autoComplete="current-password" />
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="fp-email" className="text-xs font-semibold text-foreground">
                 Registered Email <span className="text-rose-500">*</span>
@@ -131,6 +137,8 @@ export function ForgotPasswordModal({
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. owner@example.com"
                 className="rounded-xl border-border bg-background/80 focus-visible:ring-indigo-500"
+                autoComplete="off"
+                data-1p-ignore
                 required
               />
             </div>
@@ -149,6 +157,8 @@ export function ForgotPasswordModal({
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. 09123456789"
                 className="rounded-xl border-border bg-background/80 focus-visible:ring-indigo-500"
+                autoComplete="off"
+                data-1p-ignore
               />
             </div>
 
@@ -164,6 +174,8 @@ export function ForgotPasswordModal({
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
                   className="rounded-xl border-border bg-background/80 pr-10 focus-visible:ring-indigo-500"
+                  autoComplete="new-password"
+                  data-1p-ignore
                   required
                 />
                 <button
@@ -188,6 +200,8 @@ export function ForgotPasswordModal({
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-type new password"
                   className="rounded-xl border-border bg-background/80 pr-10 focus-visible:ring-indigo-500"
+                  autoComplete="new-password"
+                  data-1p-ignore
                   required
                 />
                 <button
