@@ -141,8 +141,7 @@ function SignInForm() {
     <form onSubmit={submit} className="mt-6 space-y-4" autoComplete="off">
       <ForgotPasswordModal
         open={showForgotPassword}
-        onClose={() => setShowForgotPassword(false)}
-        role="customer"
+        onOpenChange={setShowForgotPassword}
       />
       {/* Hidden decoy inputs to absorb browser autofill */}
       <div style={{ position: "absolute", opacity: 0, height: 0, width: 0, zIndex: -1, overflow: "hidden" }} aria-hidden="true">
