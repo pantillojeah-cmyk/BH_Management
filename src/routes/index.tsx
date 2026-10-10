@@ -71,7 +71,7 @@ function LandingPage() {
             <DropdownMenuContent align="end" className="w-52 rounded-2xl border-white/60 dark:border-white/10 bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl shadow-xl p-1.5">
               <Link to="/customer/login" className="w-full block">
                 <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
-                  <Users className="h-4 w-4 text-emerald-600" /> Student / Employee
+                  <Users className="h-4 w-4 text-emerald-600" /> Student
                 </DropdownMenuItem>
               </Link>
               <Link to="/owner/login" className="w-full block">

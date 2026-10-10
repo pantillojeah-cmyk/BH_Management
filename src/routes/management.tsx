@@ -160,7 +160,7 @@ function Overview() {
             </div>
           </div>
           <div className="text-3xl font-bold text-blue-700 dark:text-blue-200">{stats.customers}</div>
-          <div className="mt-1 text-xs text-blue-500 dark:text-blue-400">Students & staff</div>
+          <div className="mt-1 text-xs text-blue-500 dark:text-blue-400">Students</div>
         </div>
 
         {/* Vacancies */}

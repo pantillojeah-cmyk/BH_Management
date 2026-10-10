@@ -58,17 +58,17 @@ function AuthPage() {
         </div>
         <div className="relative z-10 space-y-5 max-w-lg">
           <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
-            Student & Employee Portal
+            Student Portal
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Find your boarding house near campus the easy way.</h2>
-          <p className="text-emerald-100/90 leading-relaxed text-sm">Real-time vacancies, verified listings, and direct reservation holds for students and staff — all in one place.</p>
+          <p className="text-emerald-100/90 leading-relaxed text-sm">Real-time vacancies, verified listings, and direct reservation holds for students — all in one place.</p>
           <ul className="space-y-2.5 text-sm text-emerald-100">
             <li className="flex items-center gap-2">• Search by rent fee, amenities, and available rooms</li>
             <li className="flex items-center gap-2">• Save your favorite boarding houses for later</li>
             <li className="flex items-center gap-2">• Reserve a room hold for up to 48 hours</li>
           </ul>
         </div>
-        <div className="relative z-10 text-xs text-emerald-200/80">For students, faculty, staff, and visitors of ZDSPGC-Dimataling.</div>
+        <div className="relative z-10 text-xs text-emerald-200/80">For students of ZDSPGC-Dimataling.</div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-10">
