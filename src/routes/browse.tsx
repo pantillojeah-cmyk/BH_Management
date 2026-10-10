@@ -131,10 +131,12 @@ function Browse() {
             <MapPin className="h-3.5 w-3.5 text-emerald-300" /> Near ZDSPGC-Dimataling Campus
           </div>
           <h1 className="text-3xl font-extrabold sm:text-4xl text-white tracking-tight leading-tight drop-shadow-sm">
-            Find your next boarding house
+            {role === "owner" ? "Explore other boarding houses" : "Find your next boarding house"}
           </h1>
           <p className="mt-2 text-sm text-emerald-100 leading-relaxed font-medium">
-            Browse vacancies, compare amenities, and message owners directly in real-time.
+            {role === "owner" 
+              ? "See other properties, compare amenities, and check current market rates."
+              : "Browse vacancies, compare amenities, and message owners directly in real-time."}
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row items-stretch sm:items-center">
