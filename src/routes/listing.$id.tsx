@@ -16,6 +16,7 @@ import {
   cancelReservation, getConfirmedReservationForListing, getListingRoomReservations
 } from "@/lib/server-fns";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
+import { StudentReservationModal, type StudentReservationFormData } from "@/components/StudentReservationModal";
 
 export const Route = createFileRoute("/listing/$id")({
   component: ListingDetail,
@@ -250,7 +251,18 @@ function ListingDetail() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   // Reservation state
-  const [activeReservation, setActiveReservation] = useState<{ id: string; roomDeck?: string | null; price?: number | null; expiresAt: string } | null>(null);
+  const [activeReservation, setActiveReservation] = useState<{
+    id: string;
+    roomDeck?: string | null;
+    price?: number | null;
+    studentName?: string | null;
+    address?: string | null;
+    contactNumber?: string | null;
+    course?: string | null;
+    yearLevel?: string | null;
+    expiresAt: string;
+  } | null>(null);
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [reserving, setReserving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -362,8 +374,29 @@ function ListingDetail() {
     status: "Available",
   };
 
-  const doReserve = async () => {
-    if (!user || role !== "customer") { toast.error("Sign in as customer to reserve"); return; }
+  const handleOpenReservationModal = () => {
+    if (!user) {
+      toast.error("Please sign in as a student to reserve");
+      navigate({ to: "/customer/login" });
+      return;
+    }
+    if (role !== "customer") {
+      toast.error("Only students can make room reservations");
+      return;
+    }
+    if (!bh || localVacancies <= 0) {
+      toast.error("No vacancies available");
+      return;
+    }
+    if (activeRoom.isOccupied) {
+      toast.error("This room is already occupied or reserved.");
+      return;
+    }
+    setIsReservationModalOpen(true);
+  };
+
+  const handleReservationSubmit = async (formData: StudentReservationFormData) => {
+    if (!user || role !== "customer") { toast.error("Sign in as student to reserve"); return; }
     if (!bh || localVacancies <= 0) { toast.error("No vacancies available"); return; }
     if (activeRoom.isOccupied) { toast.error("This room is already occupied or reserved."); return; }
 
@@ -375,6 +408,11 @@ function ListingDetail() {
           customerId: user.id,
           roomDeck: activeRoom.name,
           price: bh.monthly_fee,
+          studentName: formData.studentName,
+          address: formData.address,
+          contactNumber: formData.contactNumber,
+          course: formData.course,
+          yearLevel: formData.yearLevel,
         },
       });
       setActiveReservation(res);
@@ -384,6 +422,7 @@ function ListingDetail() {
       toast.success(`Spot reserved! Held until ${exp.toLocaleString()}`);
     } catch (e) {
       toast.error((e as Error).message);
+      throw e;
     } finally {
       setReserving(false);
     }
@@ -769,6 +808,30 @@ function ListingDetail() {
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       Expires {new Date(activeReservation.expiresAt).toLocaleString()}
                     </div>
+                    {(activeReservation.studentName || activeReservation.course) && (
+                      <div className="mt-2.5 pt-2 border-t border-emerald-500/20 text-xs space-y-1 text-emerald-950 dark:text-emerald-100">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">{activeReservation.studentName}</span>
+                          {activeReservation.course && (
+                            <span className="rounded-md bg-emerald-600/15 px-1.5 py-0.5 font-bold text-[10px] text-emerald-700 dark:text-emerald-300">
+                              {activeReservation.course} {activeReservation.yearLevel ? `· ${activeReservation.yearLevel}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        {activeReservation.contactNumber && (
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-emerald-600" />
+                            {activeReservation.contactNumber}
+                          </div>
+                        )}
+                        {activeReservation.address && (
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-emerald-600" />
+                            {activeReservation.address}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Button variant="outline" size="sm" className="w-full rounded-xl text-rose-600 hover:text-rose-700 border-rose-200 dark:border-rose-900/30" onClick={doCancelReservation} disabled={cancelling}>
                     {cancelling ? "Cancelling…" : "Cancel Reservation"}
@@ -776,10 +839,10 @@ function ListingDetail() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground leading-relaxed">Reserve a spot for <span className="font-semibold text-foreground">48 hours</span>. No advance payment required.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Reserve a spot for <span className="font-semibold text-foreground">48 hours</span>. Fill out student details to reserve.</p>
                   <Button
                     className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold shadow-md shadow-emerald-600/20 border border-white/20 transition-all hover:scale-[1.01]"
-                    onClick={doReserve}
+                    onClick={handleOpenReservationModal}
                     disabled={reserving || localVacancies <= 0 || activeRoom.isOccupied}
                   >
                     <CalendarCheck className="mr-2 h-4 w-4" />
@@ -817,6 +880,19 @@ function ListingDetail() {
           </div>
         </aside>
       </div>
+
+      {bh && (
+        <StudentReservationModal
+          isOpen={isReservationModalOpen}
+          onClose={() => setIsReservationModalOpen(false)}
+          onSubmit={handleReservationSubmit}
+          boardingHouseName={bh.name}
+          roomName={activeRoom.name}
+          monthlyFee={bh.monthly_fee}
+          initialStudentName={user?.name || ""}
+          isSubmitting={reserving}
+        />
+      )}
     </AppShell>
   );
 }

@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { createReservation, getListingRoomReservations } from "@/lib/server-fns";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
+import { StudentReservationModal, type StudentReservationFormData } from "@/components/StudentReservationModal";
 
 export interface BHCard {
   id: string;
@@ -74,6 +75,7 @@ export function BoardingHouseCard({
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [reservedRoomNames, setReservedRoomNames] = useState<Set<string>>(new Set());
   const [reserving, setReserving] = useState(false);
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [localVacancies, setLocalVacancies] = useState<number>(bh.available_vacancies);
 
   useEffect(() => {
@@ -141,23 +143,30 @@ export function BoardingHouseCard({
 
   const firstAvailableRoom = rooms.find((r) => !r.isOccupied);
 
-  const handleReserve = async (e: React.MouseEvent) => {
+  const handleReserveClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!user) {
-      toast.error("Please sign in as a student/employee to reserve a room.");
+      toast.error("Please sign in as a student to reserve a room.");
       navigate({ to: "/customer/login" });
       return;
     }
     if (role !== "customer") {
-      toast.error("Only customers can make room reservations.");
+      toast.error("Only students can make room reservations.");
       return;
     }
     if (!firstAvailableRoom || localVacancies <= 0) {
       toast.error("No rooms currently available.");
       return;
     }
+
+    setIsReservationModalOpen(true);
+  };
+
+  const handleReservationSubmit = async (formData: StudentReservationFormData) => {
+    if (!user || role !== "customer") return;
+    if (!firstAvailableRoom || localVacancies <= 0) return;
 
     setReserving(true);
     try {
@@ -167,6 +176,11 @@ export function BoardingHouseCard({
           customerId: user.id,
           roomDeck: firstAvailableRoom.name,
           price: bh.monthly_fee,
+          studentName: formData.studentName,
+          address: formData.address,
+          contactNumber: formData.contactNumber,
+          course: formData.course,
+          yearLevel: formData.yearLevel,
         },
       });
       setReservedRoomNames((prev) => new Set([...prev, firstAvailableRoom.name]));
@@ -177,6 +191,7 @@ export function BoardingHouseCard({
       );
     } catch (err) {
       toast.error((err as Error).message || "Failed to reserve room");
+      throw err;
     } finally {
       setReserving(false);
     }
@@ -336,7 +351,7 @@ export function BoardingHouseCard({
                 : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25 border border-white/30 hover:scale-[1.01] active:scale-[0.99]"
             }`}
             disabled={!firstAvailableRoom || reserving || localVacancies <= 0}
-            onClick={handleReserve}
+            onClick={handleReserveClick}
           >
             <CalendarCheck className="mr-1.5 h-3.5 w-3.5" />
             {reserving
@@ -347,6 +362,20 @@ export function BoardingHouseCard({
           </Button>
         </div>
       </div>
+
+      {/* Student Reservation Modal */}
+      {firstAvailableRoom && (
+        <StudentReservationModal
+          isOpen={isReservationModalOpen}
+          onClose={() => setIsReservationModalOpen(false)}
+          onSubmit={handleReservationSubmit}
+          boardingHouseName={bh.name}
+          roomName={firstAvailableRoom.name}
+          monthlyFee={bh.monthly_fee}
+          initialStudentName={user?.name || ""}
+          isSubmitting={reserving}
+        />
+      )}
 
       {/* Full-Screen Image Viewer Modal */}
       <ImageViewerModal

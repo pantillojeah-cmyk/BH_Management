@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarCheck, Clock, ArrowLeft, Home, BedDouble } from "lucide-react";
+import { CalendarCheck, Clock, ArrowLeft, Home, BedDouble, GraduationCap, Phone, MapPin } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { peso } from "@/lib/format";
@@ -21,6 +21,11 @@ interface ReservationRow {
   boardingHouseCover: string | null;
   roomDeck?: string | null;
   price?: number | null;
+  studentName?: string | null;
+  address?: string | null;
+  contactNumber?: string | null;
+  course?: string | null;
+  yearLevel?: string | null;
   status: string;
   expiresAt: string;
   createdAt: string;
@@ -145,6 +150,24 @@ function ReservationsPage() {
                     <div className="text-xs text-muted-foreground">
                       Reserved {new Date(r.createdAt).toLocaleDateString()} · Expires {new Date(r.expiresAt).toLocaleString()}
                     </div>
+
+                    {(r.studentName || r.course) && (
+                      <div className="mt-1 pt-1 border-t border-border/40 text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+                        {r.studentName && <span className="font-semibold text-foreground">Student: {r.studentName}</span>}
+                        {r.course && (
+                          <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
+                            <GraduationCap className="h-3 w-3" />
+                            {r.course} {r.yearLevel ? `(${r.yearLevel})` : ""}
+                          </span>
+                        )}
+                        {r.contactNumber && (
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {r.contactNumber}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {isActive && (
                       <div className="mt-2 inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-sm font-bold text-emerald-800 dark:text-emerald-300 backdrop-blur-md shadow-xs">

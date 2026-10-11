@@ -259,6 +259,11 @@ model Reservation {
   customerId      String
   roomDeck        String?
   price           Float?
+  studentName     String?
+  address         String?
+  contactNumber   String?
+  course          String?
+  yearLevel       String?
   status          ReservationStatus @default(pending)
   expiresAt       DateTime
   createdAt       DateTime          @default(now())

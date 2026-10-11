@@ -805,7 +805,19 @@ export const getListingRoomReservations = createServerFn({ method: "GET" })
   });
 
 export const createReservation = createServerFn({ method: "POST" })
-  .validator((data: { boardingHouseId: string; customerId: string; roomDeck?: string; price?: number }) => data)
+  .validator(
+    (data: {
+      boardingHouseId: string;
+      customerId: string;
+      roomDeck?: string;
+      price?: number;
+      studentName?: string;
+      address?: string;
+      contactNumber?: string;
+      course?: string;
+      yearLevel?: string;
+    }) => data
+  )
   .handler(async ({ data }) => {
     const now = new Date();
     const roomDeck = data.roomDeck || "Room 1";
@@ -843,6 +855,11 @@ export const createReservation = createServerFn({ method: "POST" })
         customerId: data.customerId,
         roomDeck: roomDeck,
         price: data.price ?? null,
+        studentName: data.studentName ?? null,
+        address: data.address ?? null,
+        contactNumber: data.contactNumber ?? null,
+        course: data.course ?? null,
+        yearLevel: data.yearLevel ?? null,
         status: "pending",
         expiresAt,
       },
@@ -875,6 +892,11 @@ export const createReservation = createServerFn({ method: "POST" })
       id: reservation.id,
       roomDeck: reservation.roomDeck,
       price: reservation.price,
+      studentName: reservation.studentName,
+      address: reservation.address,
+      contactNumber: reservation.contactNumber,
+      course: reservation.course,
+      yearLevel: reservation.yearLevel,
       expiresAt: reservation.expiresAt.toISOString(),
     };
   });
@@ -904,6 +926,11 @@ export const getCustomerReservations = createServerFn({ method: "GET" })
       boardingHouseCover: r.boardingHouse.coverPhotoUrl,
       roomDeck: r.roomDeck,
       price: r.price,
+      studentName: r.studentName,
+      address: r.address,
+      contactNumber: r.contactNumber,
+      course: r.course,
+      yearLevel: r.yearLevel,
       status: expiredIds.includes(r.id) ? "expired" : r.status,
       expiresAt: r.expiresAt.toISOString(),
       createdAt: r.createdAt.toISOString(),
@@ -927,6 +954,11 @@ export const getActiveReservationForListing = createServerFn({ method: "GET" })
       id: reservation.id,
       roomDeck: reservation.roomDeck,
       price: reservation.price,
+      studentName: reservation.studentName,
+      address: reservation.address,
+      contactNumber: reservation.contactNumber,
+      course: reservation.course,
+      yearLevel: reservation.yearLevel,
       expiresAt: reservation.expiresAt.toISOString(),
     };
   });
@@ -965,8 +997,13 @@ export const getOwnerReservations = createServerFn({ method: "GET" })
     return reservations.map((r) => ({
       id: r.id,
       boardingHouseName: r.boardingHouse.name,
-      customerName: r.customer.name ?? "Unknown",
+      customerName: r.studentName || r.customer.name || "Unknown",
       customerEmail: r.customer.email ?? "",
+      studentName: r.studentName || r.customer.name || "Unknown",
+      address: r.address ?? "",
+      contactNumber: r.contactNumber ?? "",
+      course: r.course ?? "",
+      yearLevel: r.yearLevel ?? "",
       roomDeck: r.roomDeck,
       price: r.price,
       status: expiredIds.includes(r.id) ? "expired" : r.status,
