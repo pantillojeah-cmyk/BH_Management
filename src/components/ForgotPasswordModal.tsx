@@ -153,9 +153,10 @@ export function ForgotPasswordModal({
               <Input
                 id="fp-phone"
                 type="tel"
+                inputMode="numeric"
+                maxLength={11}
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 09123456789"
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                 className="rounded-xl border-border bg-background/80 focus-visible:ring-indigo-500"
                 autoComplete="off"
                 data-1p-ignore

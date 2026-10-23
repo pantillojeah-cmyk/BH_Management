@@ -206,9 +206,10 @@ export function StudentReservationModal({
             <Input
               id="contact-number"
               type="tel"
-              placeholder="e.g. 09123456789"
+              inputMode="numeric"
+              maxLength={11}
               value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
+              onChange={(e) => setContactNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
               className="h-10 rounded-xl bg-background/60 text-sm focus:ring-emerald-500"
               required
             />

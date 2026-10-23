@@ -370,6 +370,10 @@ function UsersTab() {
       toast.error("Name is required");
       return;
     }
+    if (editForm.phone && editForm.phone.trim() && !/^\d{11}$/.test(editForm.phone.trim())) {
+      toast.error("Phone number must be exactly 11 digits");
+      return;
+    }
     setIsSaving(true);
     try {
       await adminUpdateUserProfile({
@@ -788,12 +792,14 @@ function UsersTab() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="edit-phone">Phone Number (Optional)</Label>
+                <Label htmlFor="edit-phone">Phone Number</Label>
                 <Input
                   id="edit-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={11}
                   value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  placeholder="09123456789"
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, "").slice(0, 11) })}
                 />
               </div>
 

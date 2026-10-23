@@ -632,6 +632,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   const save = async () => {
     if (!user) return;
     if (!name.trim() || !address.trim() || !contact.trim()) { toast.error("Name, address, and contact are required"); return; }
+    if (!/^\d{11}$/.test(contact.trim())) { toast.error("Contact number must be exactly 11 digits"); return; }
     setBusy(true);
     try {
       const latNum = latitude.trim() ? parseFloat(latitude) : null;
@@ -693,7 +694,17 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
         <div className="sm:col-span-2"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="sm:col-span-2"><Label>Address</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. Purok 2 Kagawasan, Dimataling, Zamboanga del Sur" /></div>
         <div><Label>Landmark</Label><Input value={landmark ?? ""} onChange={(e) => setLandmark(e.target.value)} placeholder="e.g. Beside San Miguel Elementary School" /></div>
-        <div><Label>Contact number</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} /></div>
+        <div>
+          <Label>Contact number</Label>
+          <Input
+            type="tel"
+            inputMode="numeric"
+            maxLength={11}
+            value={contact}
+            onChange={(e) => setContact(e.target.value.replace(/\D/g, "").slice(0, 11))}
+            required
+          />
+        </div>
 
         {/* GPS Location & Landmark Matching Section */}
         <div className="sm:col-span-2 rounded-xl border border-border/80 bg-muted/30 p-4 space-y-3">

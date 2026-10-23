@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Building2, Eye, EyeOff } from "lucide-react";
+import { Building2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,20 @@ export const Route = createFileRoute("/customer_/login")({
 
 const emailSchema = z.string().trim().email("Invalid email").max(255);
 const passSchema = z.string().min(6, "Password must be at least 6 characters").max(72);
-const nameSchema = z.string().trim().min(2, "Enter your full name").max(100);
+const nameSchema = z.string().trim().min(2, "Full name is required").max(100);
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(1, "Phone number is required")
+  .refine((val) => !/[a-zA-Z]/.test(val), {
+    message: "Letters are not allowed. Please enter numbers only.",
+  })
+  .refine((val) => val.replace(/\D/g, "").length <= 11 && val.length <= 11, {
+    message: "Phone number cannot exceed 11 digits.",
+  })
+  .refine((val) => /^\d{11}$/.test(val), {
+    message: "Phone number must be exactly 11 digits (e.g. 09*********).",
+  });
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -191,19 +204,29 @@ function SignInForm() {
 }
 
 function SignUpForm() {
-  const [fullName, setFullName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleInitial, setMiddleInitial] = useState("");
+  const [lastNameTouched, setLastNameTouched] = useState(false);
+  const [firstNameTouched, setFirstNameTouched] = useState(false);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const role = "customer";
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setFullName("");
+    setLastName("");
+    setFirstName("");
+    setMiddleInitial("");
     setEmail("");
     setPhone("");
     setPassword("");
+    setLastNameTouched(false);
+    setFirstNameTouched(false);
+    setPhoneTouched(false);
     const timer = setTimeout(() => {
       setEmail("");
       setPassword("");
@@ -211,11 +234,68 @@ function SignUpForm() {
     return () => clearTimeout(timer);
   }, []);
 
+  const getPhoneError = (val: string, touched: boolean) => {
+    if (!val) {
+      return touched ? "Phone number is required." : null;
+    }
+    const hasLetters = /[a-zA-Z]/.test(val);
+    const hasSpecial = /[^0-9a-zA-Z]/.test(val);
+    const digitsOnly = val.replace(/\D/g, "");
+    const isTooLong = val.length > 11 || digitsOnly.length > 11;
+
+    if (hasLetters && isTooLong) {
+      return "Letters are not allowed and phone number cannot exceed 11 digits.";
+    }
+    if (hasLetters) {
+      return "Letters are not allowed. Please enter numbers only.";
+    }
+    if (hasSpecial) {
+      return "Special characters are not allowed. Numbers only.";
+    }
+    if (isTooLong) {
+      return "Phone number cannot exceed 11 digits.";
+    }
+    if (touched && digitsOnly.length < 11) {
+      return "Phone number must be exactly 11 digits (e.g. 09*********).";
+    }
+    return null;
+  };
+
+  const lastNameError = lastNameTouched && !lastName.trim() ? "Last name is required." : null;
+  const firstNameError = firstNameTouched && !firstName.trim() ? "First name is required." : null;
+  const phoneError = getPhoneError(phone, phoneTouched);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLastNameTouched(true);
+    setFirstNameTouched(true);
+    setPhoneTouched(true);
+
+    const cleanLast = lastName.trim();
+    const cleanFirst = firstName.trim();
+    const cleanMi = middleInitial.trim().replace(/\.?$/, middleInitial.trim() ? "." : "");
+
+    if (!cleanLast) {
+      toast.error("Last name is required.");
+      return;
+    }
+    if (!cleanFirst) {
+      toast.error("First name is required.");
+      return;
+    }
+
+    const pErr = getPhoneError(phone, true);
+    if (pErr) {
+      toast.error(pErr);
+      return;
+    }
+
+    const fullName = cleanMi ? `${cleanLast}, ${cleanFirst} ${cleanMi}` : `${cleanLast}, ${cleanFirst}`;
+
     try {
       nameSchema.parse(fullName);
       emailSchema.parse(email);
+      phoneSchema.parse(phone);
       passSchema.parse(password);
     } catch (err) {
       if (err instanceof z.ZodError) { toast.error(err.issues[0].message); return; }
@@ -225,7 +305,7 @@ function SignUpForm() {
     if (error) { toast.error(error.message); setBusy(false); return; }
     // Save profile and role via server function
     if (data?.user) {
-      await updateProfile({ data: { userId: data.user.id, fullName, phone: phone || null } });
+      await updateProfile({ data: { userId: data.user.id, fullName, phone: phone.trim() } });
       // Register role via API
       await fetch("/api/user-role", {
         method: "POST",
@@ -236,8 +316,13 @@ function SignUpForm() {
     setBusy(false);
     setEmail("");
     setPassword("");
-    setFullName("");
+    setLastName("");
+    setFirstName("");
+    setMiddleInitial("");
     setPhone("");
+    setLastNameTouched(false);
+    setFirstNameTouched(false);
+    setPhoneTouched(false);
     toast.success("Account created — you're signed in.");
   };
 
@@ -250,17 +335,89 @@ function SignUpForm() {
       </div>
 
       <div>
-        <Label htmlFor="su-name">Full name</Label>
-        <Input id="su-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="new-password" />
+        <Label htmlFor="su-lastname">Last name</Label>
+        <Input
+          id="su-lastname"
+          placeholder="e.g. Dela Cruz"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          onBlur={() => setLastNameTouched(true)}
+          required
+          autoComplete="family-name"
+          className={lastNameError ? "border-red-500 focus-visible:ring-red-500" : ""}
+        />
+        {lastNameError && (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{lastNameError}</span>
+          </p>
+        )}
       </div>
+
+      <div className="grid grid-cols-12 gap-3">
+        <div className="col-span-8">
+          <Label htmlFor="su-firstname">First name</Label>
+          <Input
+            id="su-firstname"
+            placeholder="e.g. Juan"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            onBlur={() => setFirstNameTouched(true)}
+            required
+            autoComplete="given-name"
+            className={firstNameError ? "border-red-500 focus-visible:ring-red-500" : ""}
+          />
+          {firstNameError && (
+            <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>{firstNameError}</span>
+            </p>
+          )}
+        </div>
+        <div className="col-span-4">
+          <Label htmlFor="su-mi">Middle initial</Label>
+          <Input
+            id="su-mi"
+            placeholder="e.g. M."
+            maxLength={4}
+            value={middleInitial}
+            onChange={(e) => setMiddleInitial(e.target.value.toUpperCase())}
+            autoComplete="additional-name"
+          />
+        </div>
+      </div>
+
       <div>
         <Label htmlFor="su-email">Email</Label>
         <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="new-password" required />
       </div>
+
       <div>
-        <Label htmlFor="su-phone">Phone (optional)</Label>
-        <Input id="su-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9xx xxx xxxx" autoComplete="new-password" />
+        <Label htmlFor="su-phone">Phone number</Label>
+        <Input
+          id="su-phone"
+          type="text"
+          inputMode="numeric"
+          placeholder="09*********"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          onBlur={() => setPhoneTouched(true)}
+          autoComplete="tel"
+          required
+          className={phoneError ? "border-red-500 focus-visible:ring-red-500 text-red-600 dark:text-red-400" : ""}
+        />
+        {phoneError ? (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{phoneError}</span>
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Must be 11 numeric digits (e.g. 09*********)
+          </p>
+        )}
       </div>
+
       <div>
         <Label htmlFor="su-pass">Password</Label>
         <div className="relative">
@@ -282,6 +439,7 @@ function SignUpForm() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <p className="text-[11px] text-muted-foreground mt-1">Must be at least 6 characters</p>
       </div>
 
       <Button type="submit" className="w-full" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
