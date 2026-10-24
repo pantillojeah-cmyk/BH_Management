@@ -85,9 +85,9 @@ function AdminLogin() {
       <div className="w-full max-w-md space-y-7 rounded-3xl bg-slate-900/70 p-8 sm:p-10 shadow-2xl border border-white/10 backdrop-blur-2xl">
         <div className="text-center">
           <img
-            src="/logo.png"
+            src="/logo.png?v=2026"
             alt="ZDSPGC BH Tracker Logo"
-            className="mx-auto mb-4 h-20 w-20 rounded-full object-cover border-2 border-indigo-400/40 shadow-xl shadow-indigo-500/20"
+            className="mx-auto mb-4 h-20 w-20 rounded-full object-contain bg-white p-1 border-2 border-indigo-400/40 shadow-xl shadow-indigo-500/20"
           />
           <h1 className="text-2xl font-bold tracking-tight text-white">Admin Portal</h1>
           <p className="mt-1.5 text-xs text-slate-400">

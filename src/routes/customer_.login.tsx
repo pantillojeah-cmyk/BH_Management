@@ -60,7 +60,7 @@ function AuthPage() {
 
         <div className="relative z-10 flex items-center gap-3">
           <img
-            src="/logo.png"
+            src="/logo.png?v=2026"
             alt="ZDSPGC BH Tracker Logo"
             className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
           />
@@ -88,7 +88,7 @@ function AuthPage() {
         <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/60 dark:border-white/15 shadow-2xl backdrop-blur-2xl">
           <div className="mb-6 text-center">
             <img
-              src="/logo.png"
+              src="/logo.png?v=2026"
               alt="ZDSPGC BH Tracker Logo"
               className="mx-auto mb-3.5 h-16 w-16 rounded-full object-contain bg-white p-1 border-2 border-emerald-500/40 shadow-lg"
             />

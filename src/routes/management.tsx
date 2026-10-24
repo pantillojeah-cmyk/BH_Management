@@ -83,7 +83,7 @@ function AdminPage() {
     <AppShell>
       <div className="flex items-center gap-3.5 mb-6">
         <img
-          src="/logo.png"
+          src="/logo.png?v=2026"
           alt="ZDSPGC BH Tracker Logo"
           className="h-12 w-12 rounded-full object-cover border-2 border-primary/30 shadow-md"
         />

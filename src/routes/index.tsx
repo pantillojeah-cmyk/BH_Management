@@ -32,9 +32,9 @@ function LandingPage() {
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/50 dark:border-white/10 bg-background/70 px-6 py-3.5 backdrop-blur-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
         <Link to="/" className="group flex items-center gap-3 transition-transform hover:scale-[1.02]">
           <img
-            src="/logo.png"
+            src="/logo.png?v=2026"
             alt="Boarding House Vacancy Tracker"
-            className="h-11 w-11 rounded-full object-cover shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105"
+            className="h-11 w-11 rounded-full object-contain bg-white p-0.5 shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105"
           />
           <div className="flex flex-col">
             <span className="text-base font-bold leading-tight text-slate-900 dark:text-white tracking-tight">Boarding House</span>

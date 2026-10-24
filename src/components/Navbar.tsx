@@ -12,7 +12,7 @@ export function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="group flex items-center gap-3 transition-transform hover:scale-[1.02]">
           <img
-            src="/logo.png"
+            src="/logo.png?v=2026"
             alt="Boarding House Vacancy Tracker"
             className="h-11 w-11 rounded-full object-contain bg-white p-0.5 shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105"
           />
