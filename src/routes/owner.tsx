@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { toast } from "sonner";
 import { peso, vacancyState, toneClass } from "@/lib/format";
-import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto, getOwnerRoomStatus, setRoomOccupiedByOwner } from "@/lib/server-fns";
+import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto, getOwnerRoomStatus, setRoomOccupiedByOwner, updateReservationExpiry } from "@/lib/server-fns";
 import { compressImage } from "@/lib/storage";
 import {
   Select,
@@ -71,6 +71,7 @@ interface BHRow {
   room_capacity?: number; price_type?: string;
   amenities: string[]; cover_photo_url: string | null; status: "pending" | "approved" | "rejected";
   latitude?: number | null; longitude?: number | null;
+  reservationHoldHours?: number;
   extraPhotos?: string[];
 }
 
@@ -367,6 +368,10 @@ function OwnerListingCard({
             <Users className="h-3.5 w-3.5" />
             Good for {r.room_capacity ?? 1} {(r.room_capacity ?? 1) === 1 ? "person" : "persons"}
           </span>
+          <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+            <Clock className="h-3.5 w-3.5" />
+            {r.reservationHoldHours ?? 48}h hold
+          </span>
         </div>
 
         {/* Vacancy stepper */}
@@ -551,6 +556,9 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   const [roomCapacity, setRoomCapacity] = useState(initial?.room_capacity?.toString() ?? "2");
   const [rooms, setRooms] = useState(initial?.num_rooms?.toString() ?? "");
   const [vacancies, setVacancies] = useState(initial?.available_vacancies?.toString() ?? "");
+  const [reservationHoldHours, setReservationHoldHours] = useState<string>(
+    initial?.reservationHoldHours?.toString() ?? "48"
+  );
   const [amenities, setAmenities] = useState<string[]>(initial?.amenities ?? []);
   const [amenityPhotos, setAmenityPhotos] = useState<Record<string, string[]>>({});
   const [extraPhotos, setExtraPhotos] = useState<string[]>(initial?.extraPhotos ?? []);
@@ -696,6 +704,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           roomCapacity: Number(roomCapacity) || 1, priceType,
           amenities, coverPhotoUrl: coverPath, extraPhotos: extraPhotos,
           latitude: latNum, longitude: lngNum,
+          reservationHoldHours: Number(reservationHoldHours) || 48,
         },
       });
       // Save amenity photos if any exist
@@ -1032,6 +1041,62 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
 
         <div><Label>Number of rooms</Label><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></div>
         <div><Label>Available vacancies / slots</Label><Input type="number" value={vacancies} onChange={(e) => setVacancies(e.target.value)} /></div>
+
+        {/* Reservation Hold Duration Section */}
+        <div className="sm:col-span-2 rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-bold text-foreground">Reservation Hold Duration (Time Limit)</span>
+            </div>
+            <span className="text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700 px-2.5 py-0.5 rounded-full">
+              ⏱️ {reservationHoldHours} {Number(reservationHoldHours) === 1 ? "hour" : "hours"}
+              {Number(reservationHoldHours) >= 24 && ` (${(Number(reservationHoldHours) / 24).toFixed(1).replace(/\.0$/, "")} ${Number(reservationHoldHours) >= 48 ? "days" : "day"})`}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Adjust how long a student's reservation hold lasts before automatically expiring if unconfirmed.
+          </p>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            {[
+              { label: "12 Hours", value: 12 },
+              { label: "24 Hours (1 Day)", value: 24 },
+              { label: "48 Hours (2 Days)", value: 48 },
+              { label: "72 Hours (3 Days)", value: 72 },
+              { label: "120 Hours (5 Days)", value: 120 },
+              { label: "168 Hours (1 Week)", value: 168 },
+            ].map((preset) => (
+              <button
+                key={preset.value}
+                type="button"
+                onClick={() => setReservationHoldHours(preset.value.toString())}
+                className={`px-3 py-1.5 text-xs font-medium rounded-xl border transition-all ${
+                  Number(reservationHoldHours) === preset.value
+                    ? "bg-amber-600 text-white border-amber-600 shadow-sm font-semibold"
+                    : "bg-background border-border hover:bg-muted text-foreground"
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className="text-[11px] text-muted-foreground">Custom:</span>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min="1"
+                  max="720"
+                  className="h-8 w-20 text-xs text-center font-bold"
+                  value={reservationHoldHours}
+                  onChange={(e) => setReservationHoldHours(e.target.value)}
+                />
+                <span className="text-xs text-muted-foreground">hrs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="sm:col-span-2"><Label>Description</Label><Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} maxLength={2000} /></div>
         <div className="sm:col-span-2">
           <Label>Amenities</Label>
@@ -1291,6 +1356,14 @@ function OwnerReservations() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const handleExtendTime = async (id: string, hours: number) => {
+    try {
+      await updateReservationExpiry({ data: { id, additionalHours: hours } });
+      toast.success(`Reservation extended by +${hours} hours!`);
+      reload();
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
   const statusBadge = (status: string, expiresAt: string) => {
     const isExpiredByTime = new Date(expiresAt) < new Date();
     const effective = isExpiredByTime && status === "pending" ? "expired" : status;
@@ -1378,22 +1451,47 @@ function OwnerReservations() {
               </div>
             </div>
             {isPending && (
-              <div className="mt-4 pt-4 border-t border-border/40 flex gap-2">
-                <Button
-                  size="sm"
-                  className="gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20"
-                  onClick={() => doConfirm(r.id)}
-                >
-                  ✓ Confirm Reservation
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                  onClick={() => doCancel(r.id)}
-                >
-                  ✕ Cancel
-                </Button>
+              <div className="mt-4 pt-4 border-t border-border/40 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/20"
+                    onClick={() => doConfirm(r.id)}
+                  >
+                    ✓ Confirm Reservation
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                    onClick={() => doCancel(r.id)}
+                  >
+                    ✕ Cancel
+                  </Button>
+                </div>
+
+                {/* Adjust / Extend Hold Time */}
+                <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl border border-border/60">
+                  <span className="text-[11px] font-semibold text-muted-foreground px-2 flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-amber-500" /> Add Hold Time:
+                  </span>
+                  {[
+                    { label: "+12h", hours: 12 },
+                    { label: "+24h (1d)", hours: 24 },
+                    { label: "+48h (2d)", hours: 48 },
+                  ].map((btn) => (
+                    <Button
+                      key={btn.hours}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs px-2.5 rounded-lg border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium"
+                      onClick={() => handleExtendTime(r.id, btn.hours)}
+                      title={`Extend hold by ${btn.hours} hours`}
+                    >
+                      {btn.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

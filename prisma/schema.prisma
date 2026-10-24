@@ -148,6 +148,7 @@ model BoardingHouse {
   latitude           Float?
   longitude          Float?
   status             ListingStatus        @default(pending)
+  reservationHoldHours Int                @default(48)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 

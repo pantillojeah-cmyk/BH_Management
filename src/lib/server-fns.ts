@@ -232,7 +232,7 @@ export const getOwnerListings = createServerFn({ method: "GET" })
       include: { photos: { orderBy: { sortOrder: "asc" } } },
       orderBy: { createdAt: "desc" },
     });
-    return houses.map((h) => ({
+    return houses.map((h: any) => ({
       id: h.id, name: h.name, address: h.address, landmark: h.landmark,
       contact_number: h.contactNumber, description: h.description,
       monthly_fee: h.monthlyFee, num_rooms: h.numRooms,
@@ -242,7 +242,8 @@ export const getOwnerListings = createServerFn({ method: "GET" })
       amenities: h.amenities,
       cover_photo_url: h.coverPhotoUrl, status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
       latitude: h.latitude, longitude: h.longitude,
-      extraPhotos: h.photos.map((p) => p.url),
+      reservationHoldHours: h.reservationHoldHours ?? 48,
+      extraPhotos: h.photos.map((p: any) => p.url),
     }));
   });
 
@@ -278,12 +279,13 @@ export const upsertListing = createServerFn({ method: "POST" })
     amenities: string[]; coverPhotoUrl: string | null;
     latitude?: number | null; longitude?: number | null;
     extraPhotos?: string[];
+    reservationHoldHours?: number;
   }) => data)
   .handler(async ({ data }) => {
     const extraPhotos = data.extraPhotos ?? [];
     if (data.id) {
       // Update existing listing
-      await prisma.boardingHouse.update({
+      await (prisma.boardingHouse as any).update({
         where: { id: data.id },
         data: {
           name: data.name, address: data.address, landmark: data.landmark,
@@ -296,17 +298,18 @@ export const upsertListing = createServerFn({ method: "POST" })
           coverPhotoUrl: data.coverPhotoUrl,
           latitude: data.latitude !== undefined ? data.latitude : undefined,
           longitude: data.longitude !== undefined ? data.longitude : undefined,
+          reservationHoldHours: data.reservationHoldHours !== undefined ? Number(data.reservationHoldHours) : undefined,
         },
       });
       // Replace extra photos for this listing
       await prisma.boardingHousePhoto.deleteMany({ where: { boardingHouseId: data.id } });
       if (extraPhotos.length > 0) {
         await prisma.boardingHousePhoto.createMany({
-  data: extraPhotos.map((url, i) => ({ boardingHouseId: data.id!, url, sortOrder: i })),
-});
+          data: extraPhotos.map((url, i) => ({ boardingHouseId: data.id!, url, sortOrder: i })),
+        });
       }
     } else {
-      const created = await prisma.boardingHouse.create({
+      const created = await (prisma.boardingHouse as any).create({
         data: {
           ownerId: data.ownerId, name: data.name, address: data.address,
           landmark: data.landmark, contactNumber: data.contactNumber,
@@ -317,6 +320,7 @@ export const upsertListing = createServerFn({ method: "POST" })
           amenities: data.amenities, coverPhotoUrl: data.coverPhotoUrl,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
+          reservationHoldHours: data.reservationHoldHours ? Number(data.reservationHoldHours) : 48,
           status: "approved",
         },
       });
@@ -976,9 +980,12 @@ export const createReservation = createServerFn({ method: "POST" })
         expiresAt: { gt: now },
       },
     });
-    if (existing) throw new Error("You already have an active pending reservation for this boarding house.");
-
-    const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000); // +48 hours
+    const bhInfo = await (prisma.boardingHouse as any).findUnique({
+      where: { id: data.boardingHouseId },
+      select: { numRooms: true, reservationHoldHours: true },
+    });
+    const holdHours = bhInfo?.reservationHoldHours && Number(bhInfo.reservationHoldHours) > 0 ? Number(bhInfo.reservationHoldHours) : 48;
+    const expiresAt = new Date(now.getTime() + holdHours * 60 * 60 * 1000);
     const reservation = await prisma.reservation.create({
       data: {
         boardingHouseId: data.boardingHouseId,
@@ -996,10 +1003,7 @@ export const createReservation = createServerFn({ method: "POST" })
     });
 
     try {
-      const bh = await prisma.boardingHouse.findUnique({
-        where: { id: data.boardingHouseId },
-        select: { numRooms: true },
-      });
+      const bh = bhInfo;
       if (bh) {
         const occupiedCount = await prisma.reservation.count({
           where: {
@@ -1211,6 +1215,27 @@ export const confirmReservation = createServerFn({ method: "POST" })
       }
     } catch {}
     return { success: true };
+  });
+
+export const updateReservationExpiry = createServerFn({ method: "POST" })
+  .validator((data: { id: string; additionalHours?: number; newExpiresAt?: string }) => data)
+  .handler(async ({ data }) => {
+    let expiresAt: Date;
+    if (data.newExpiresAt) {
+      expiresAt = new Date(data.newExpiresAt);
+    } else if (data.additionalHours) {
+      const current = await prisma.reservation.findUnique({ where: { id: data.id } });
+      if (!current) throw new Error("Reservation not found");
+      const baseTime = Math.max(Date.now(), new Date(current.expiresAt).getTime());
+      expiresAt = new Date(baseTime + data.additionalHours * 60 * 60 * 1000);
+    } else {
+      throw new Error("No update duration provided");
+    }
+    await prisma.reservation.update({
+      where: { id: data.id },
+      data: { expiresAt, status: "pending" },
+    });
+    return { success: true, expiresAt: expiresAt.toISOString() };
   });
 
 
