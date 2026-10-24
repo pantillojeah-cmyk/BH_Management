@@ -14,7 +14,7 @@ export function Navbar() {
           <img
             src="/logo.png"
             alt="Boarding House Vacancy Tracker"
-            className="h-11 w-11 rounded-full object-cover shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105"
+            className="h-11 w-11 rounded-full object-contain bg-white p-0.5 shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105"
           />
           <div className="flex flex-col leading-tight">
             <span className="text-base font-bold text-slate-900 dark:text-white leading-snug tracking-tight">Boarding House</span>

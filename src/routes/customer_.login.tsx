@@ -62,7 +62,7 @@ function AuthPage() {
           <img
             src="/logo.png"
             alt="ZDSPGC BH Tracker Logo"
-            className="h-12 w-12 rounded-full object-cover border-2 border-white/50 shadow-lg"
+            className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
           />
           <div>
             <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
@@ -90,7 +90,7 @@ function AuthPage() {
             <img
               src="/logo.png"
               alt="ZDSPGC BH Tracker Logo"
-              className="mx-auto mb-3.5 h-16 w-16 rounded-full object-cover border-2 border-emerald-500/40 shadow-lg"
+              className="mx-auto mb-3.5 h-16 w-16 rounded-full object-contain bg-white p-1 border-2 border-emerald-500/40 shadow-lg"
             />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome to BH Tracker</h1>
             <p className="text-xs text-muted-foreground mt-1">Sign in or create an account to manage your reservations</p>

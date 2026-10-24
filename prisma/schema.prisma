@@ -109,6 +109,7 @@ model Profile {
   email      String?
   phone      String?
   avatarUrl  String?
+  documents  String[] @default([])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

@@ -9,7 +9,21 @@ export const Route = createFileRoute("/api/user-role")({
         const userId = url.searchParams.get("userId");
         if (!userId) return Response.json({ role: null });
         const role = await prisma.userRole.findFirst({ where: { userId } });
-        if (!role) return Response.json({ role: null });
+        if (!role) {
+          const rejectedLog = await prisma.activityLog.findFirst({
+            where: { userId, action: "owner_rejected" },
+            orderBy: { createdAt: "desc" },
+          });
+          if (rejectedLog) {
+            const details = (rejectedLog.details as any) || {};
+            return Response.json({
+              role: "rejected_owner",
+              reason: details.reason || "Your owner application was not approved by the admin.",
+              rejectedAt: rejectedLog.createdAt,
+            });
+          }
+          return Response.json({ role: null });
+        }
         // Unapproved owners see a special pending role
         if (role.role === "owner" && !role.isApproved) {
           return Response.json({ role: "pending_owner" });
@@ -28,8 +42,11 @@ export const Route = createFileRoute("/api/user-role")({
             create: { id: userId, fullName: "New User" },
             update: {},
           });
-          // remove previous roles if any to avoid duplicates
-          await prisma.userRole.deleteMany({ where: { userId } });
+          // remove previous roles and any old rejection logs
+          await Promise.all([
+            prisma.userRole.deleteMany({ where: { userId } }),
+            prisma.activityLog.deleteMany({ where: { userId, action: "owner_rejected" } }),
+          ]);
           await prisma.userRole.create({
             data: {
               userId,

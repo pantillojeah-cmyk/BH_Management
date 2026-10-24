@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Building2, Eye, EyeOff, KeyRound, ArrowLeft, Clock, LogOut, CheckCircle2, RotateCcw, AlertCircle } from "lucide-react";
+import { Building2, Eye, EyeOff, KeyRound, ArrowLeft, Clock, LogOut, CheckCircle2, RotateCcw, AlertCircle, Camera, Upload, User, X, FileText, XCircle } from "lucide-react";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { updateProfile } from "@/lib/server-fns";
+import { uploadOwnerPhoto } from "@/lib/storage";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 
 export const Route = createFileRoute("/owner_/login")({
@@ -42,13 +43,17 @@ function OwnerAuthPage() {
     if (user && role) {
       if (role === "admin") navigate({ to: "/management" });
       else if (role === "owner") navigate({ to: "/owner" });
-      // pending_owner stays on this page to see the waiting screen
-      else if (role !== "pending_owner") navigate({ to: "/browse" });
+      // pending_owner and rejected_owner stay on this page to see the status screen
+      else if (role !== "pending_owner" && (role as string) !== "rejected_owner") navigate({ to: "/browse" });
     }
   }, [user, role, navigate]);
 
   if (user && role === "pending_owner") {
     return <PendingApprovalScreen userName={user.name} email={user.email} />;
+  }
+
+  if (user && (role as string) === "rejected_owner") {
+    return <RejectedOwnerScreen userName={user.name} email={user.email} />;
   }
 
   return (
@@ -67,7 +72,7 @@ function OwnerAuthPage() {
           <img
             src="/logo.png"
             alt="ZDSPGC BH Tracker Logo"
-            className="h-12 w-12 rounded-full object-cover border-2 border-white/50 shadow-lg"
+            className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
           />
           <div>
             <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
@@ -95,7 +100,7 @@ function OwnerAuthPage() {
             <img
               src="/logo.png"
               alt="ZDSPGC BH Tracker Logo"
-              className="mx-auto mb-3.5 h-16 w-16 rounded-full object-cover border-2 border-indigo-500/40 shadow-lg"
+              className="mx-auto mb-3.5 h-16 w-16 rounded-full object-contain bg-white p-1 border-2 border-indigo-500/40 shadow-lg"
             />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Owner Portal</h1>
             <p className="text-xs text-muted-foreground mt-1">Sign in or register your property to start listing</p>
@@ -245,6 +250,10 @@ function SignUpForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [documentPreviews, setDocumentPreviews] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -254,6 +263,10 @@ function SignUpForm() {
     setEmail("");
     setPhone("");
     setPassword("");
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setDocumentFiles([]);
+    setDocumentPreviews([]);
     setLastNameTouched(false);
     setFirstNameTouched(false);
     setPhoneTouched(false);
@@ -335,11 +348,47 @@ function SignUpForm() {
     if (error) { toast.error(error.message); setBusy(false); return; }
     
     if (data?.user) {
-      await updateProfile({ data: { userId: data.user.id, fullName, phone: phone.trim() } });
+      const userId = data.user.id;
+
+      // 1. Upload avatar photo if chosen
+      let avatarUrl: string | null = null;
+      if (avatarFile) {
+        try {
+          avatarUrl = await uploadOwnerPhoto(userId, avatarFile);
+        } catch (err) {
+          console.error("Avatar upload failed:", err);
+        }
+      }
+
+      // 2. Upload permit/documents if chosen
+      const uploadedDocs: string[] = [];
+      if (documentFiles.length > 0) {
+        for (const docFile of documentFiles) {
+          try {
+            const url = await uploadOwnerPhoto(userId, docFile);
+            uploadedDocs.push(url);
+          } catch (err) {
+            console.error("Document upload failed:", err);
+          }
+        }
+      }
+
+      // 3. Save profile with avatar and documents
+      await updateProfile({
+        data: {
+          userId,
+          fullName,
+          phone: phone.trim(),
+          avatarUrl,
+          documents: uploadedDocs,
+        },
+      });
+
+      // 4. Register role as owner
       await fetch("/api/user-role", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: data.user.id, role: "owner" }),
+        body: JSON.stringify({ userId, role: "owner" }),
       });
     }
     setBusy(false);
@@ -350,6 +399,10 @@ function SignUpForm() {
     setEmail("");
     setPhone("");
     setPassword("");
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setDocumentFiles([]);
+    setDocumentPreviews([]);
     setLastNameTouched(false);
     setFirstNameTouched(false);
     setPhoneTouched(false);
@@ -364,7 +417,56 @@ function SignUpForm() {
       </div>
 
       <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 p-3 text-xs text-amber-700 dark:text-amber-300">
-        ⏳ After registration, your account will be reviewed by the admin before you can access the Owner Dashboard.
+        ⏳ After registration, your account and submitted documents will be reviewed by the admin before you can access the Owner Dashboard.
+      </div>
+
+      {/* Profile Picture Upload */}
+      <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40">
+        <Label className="text-xs font-semibold text-foreground">Profile Picture / ID Photo</Label>
+        <div className="flex items-center gap-3.5 pt-1">
+          <div className="relative h-14 w-14 rounded-full overflow-hidden border-2 border-indigo-400/50 bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0 shadow-sm">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="Profile Preview" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-7 w-7 text-indigo-400" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 shadow-sm transition-colors">
+                <Camera className="h-3.5 w-3.5" />
+                <span>{avatarFile ? "Change Photo" : "Attach Profile Photo"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      setAvatarFile(f);
+                      setAvatarPreview(URL.createObjectURL(f));
+                    }
+                  }}
+                />
+              </label>
+              {avatarFile && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAvatarFile(null);
+                    setAvatarPreview(null);
+                  }}
+                  className="text-xs text-rose-500 hover:underline font-medium"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {avatarFile ? avatarFile.name : "Attach photo of the boarding house owner"}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -474,7 +576,75 @@ function SignUpForm() {
         </div>
         <p className="text-[11px] text-muted-foreground mt-1">Must be at least 6 characters</p>
       </div>
-      <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={busy}>{busy ? "Creating…" : "Create owner account"}</Button>
+
+      {/* Boarding House Documents / Permit Photos */}
+      <div className="space-y-1.5 pt-1">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-semibold flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+            Boarding House Documents & Permits
+          </Label>
+          <span className="text-[10px] text-amber-700 dark:text-amber-300 font-medium bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+            For Admin Review
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Attach photos of your Business Permit, Barangay Clearance, or Fire Safety documents.
+        </p>
+
+        {/* Previews grid if any */}
+        {documentPreviews.length > 0 && (
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1 pb-1">
+            {documentPreviews.map((previewUrl, idx) => (
+              <div
+                key={idx}
+                className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-sm"
+              >
+                <img src={previewUrl} alt={`Permit ${idx + 1}`} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDocumentFiles((prev) => prev.filter((_, i) => i !== idx));
+                    setDocumentPreviews((prev) => prev.filter((_, i) => i !== idx));
+                  }}
+                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 shadow transition-opacity"
+                  title="Remove document"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1 py-0.5 text-center truncate">
+                  Doc {idx + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload drop zone */}
+        <label className="flex flex-col items-center justify-center border-2 border-dashed border-indigo-300 dark:border-indigo-700/60 rounded-xl p-3.5 bg-indigo-50/20 dark:bg-indigo-950/10 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 cursor-pointer transition-colors text-center">
+          <Upload className="h-4 w-4 text-indigo-600 dark:text-indigo-400 mb-1" />
+          <span className="text-xs font-semibold text-foreground">
+            {documentFiles.length > 0 ? "Attach more permit photos" : "Upload Permit / Documents"}
+          </span>
+          <span className="text-[10px] text-muted-foreground mt-0.5">Click to choose photos (PNG, JPG)</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length > 0) {
+                setDocumentFiles((prev) => [...prev, ...files]);
+                const newPreviews = files.map((f) => URL.createObjectURL(f));
+                setDocumentPreviews((prev) => [...prev, ...newPreviews]);
+              }
+            }}
+          />
+        </label>
+      </div>
+
+      <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2" disabled={busy}>{busy ? "Creating account…" : "Create owner account"}</Button>
     </form>
   );
 }
@@ -595,6 +765,83 @@ function PendingApprovalScreen({ userName, email }: { userName?: string; email?:
         <p className="text-xs text-muted-foreground">
           If you have been waiting for a long time, please contact your campus administrator.
         </p>
+      </div>
+    </div>
+  );
+}
+
+function RejectedOwnerScreen({ userName, email }: { userName?: string; email?: string }) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const [reason, setReason] = useState<string>("Incomplete or invalid documents / permits.");
+
+  useEffect(() => {
+    fetch("/api/user-role")
+      .then((res) => res.json())
+      .then((d) => {
+        if (d?.reason) setReason(d.reason);
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-rose-50/40 to-slate-100 dark:from-slate-950 dark:via-rose-950/20 dark:to-slate-900 overflow-hidden p-6">
+      {/* Ambient background light orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-[30rem] w-[30rem] rounded-full bg-rose-400/10 blur-[120px] animate-pulse-glow" />
+        <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-slate-400/10 blur-[120px] animate-float-slow" />
+      </div>
+
+      <div className="w-full max-w-lg text-center space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <img src="/logo.png" alt="Logo" className="h-16 w-16 rounded-full object-cover border-2 border-rose-400/40 shadow-xl" />
+        </div>
+
+        {/* Main card */}
+        <div className="rounded-3xl border border-rose-200/60 dark:border-rose-700/40 bg-white/80 dark:bg-slate-800/70 backdrop-blur-2xl p-8 shadow-2xl space-y-5">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/40 border-2 border-rose-300 dark:border-rose-600 shadow-lg">
+            <XCircle className="h-10 w-10 text-rose-600 dark:text-rose-400" />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Registration Declined</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {userName ? `Hi ${userName},` : "Notice:"} your owner registration was not approved.
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-700 p-4 text-left space-y-1.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-300">
+              Reason Provided by Admin:
+            </div>
+            <p className="text-xs text-rose-800 dark:text-rose-200 leading-relaxed font-medium">
+              "{reason}"
+            </p>
+          </div>
+
+          {email && (
+            <p className="text-xs text-muted-foreground">
+              Account: <span className="font-semibold text-foreground">{email}</span>
+            </p>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            You may visit the campus administration office or re-register with updated documents.
+          </p>
+
+          <Button
+            variant="outline"
+            className="w-full rounded-xl gap-2 border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+            onClick={async () => {
+              await signOut();
+              navigate({ to: "/owner/login" });
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
       </div>
     </div>
   );

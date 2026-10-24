@@ -15,6 +15,16 @@ import { toast } from "sonner";
 import { peso, vacancyState, toneClass } from "@/lib/format";
 import { getOwnerListings, deleteListing, upsertListing, getOwnerInquiries, updateInquiryStatus, updateVacancy, getOwnerReservations, cancelReservation, confirmReservation, saveAmenityPhotos, getAmenityPhotos, appendAmenityPhoto, deleteAmenityPhoto, getOwnerRoomStatus, setRoomOccupiedByOwner } from "@/lib/server-fns";
 import { compressImage } from "@/lib/storage";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/owner")({
   head: () => ({ meta: [{ title: "Owner Dashboard" }] }),
@@ -22,6 +32,38 @@ export const Route = createFileRoute("/owner")({
 });
 
 const AMENITY_OPTIONS = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator", "Common Room", "Garden"];
+
+export const DIMATALING_ADDRESS_OPTIONS = [
+  {
+    group: "Kagawasan, Dimataling, ZDS",
+    options: [
+      "Purok 1, Kagawasan, Dimataling, ZDS",
+      "Purok 2, Kagawasan, Dimataling, ZDS",
+      "Purok 3, Kagawasan, Dimataling, ZDS",
+      "Purok 4, Kagawasan, Dimataling, ZDS",
+      "Purok 5, Kagawasan, Dimataling, ZDS",
+      "Purok 6, Kagawasan, Dimataling, ZDS",
+      "Purok 7, Kagawasan, Dimataling, ZDS",
+    ],
+  },
+];
+
+const ALL_PRESET_ADDRESSES = DIMATALING_ADDRESS_OPTIONS.flatMap((g) => g.options);
+
+function findMatchingAddressPreset(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (ALL_PRESET_ADDRESSES.includes(trimmed)) return trimmed;
+  const clean = trimmed.toLowerCase().replace(/[^a-z0-9]/g, "");
+  for (const preset of ALL_PRESET_ADDRESSES) {
+    const presetClean = preset.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (clean === presetClean) return preset;
+    const cleanNoZds = clean.replace("zamboangadelsur", "").replace("zds", "");
+    const presetNoZds = presetClean.replace("zamboangadelsur", "").replace("zds", "");
+    if (cleanNoZds === presetNoZds) return preset;
+  }
+  return "";
+}
 
 interface BHRow {
   id: string; name: string; address: string; landmark: string | null; contact_number: string;
@@ -489,8 +531,15 @@ function MyListings() {
 function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: () => void }) {
   const { user } = useAuth();
   const isEdit = !!initial;
+  const initialMatched = findMatchingAddressPreset(initial?.address);
   const [name, setName] = useState(initial?.name ?? "");
-  const [address, setAddress] = useState(initial?.address ?? "");
+  const [address, setAddress] = useState(initialMatched || initial?.address || "");
+  const [addressPreset, setAddressPreset] = useState<string>(
+    initialMatched ? initialMatched : (initial?.address ? "custom" : "")
+  );
+  const [isCustomAddress, setIsCustomAddress] = useState(
+    initial?.address ? !initialMatched : false
+  );
   const [landmark, setLandmark] = useState(initial?.landmark ?? "");
   const [latitude, setLatitude] = useState(initial?.latitude !== undefined && initial?.latitude !== null ? initial.latitude.toString() : "");
   const [longitude, setLongitude] = useState(initial?.longitude !== undefined && initial?.longitude !== null ? initial.longitude.toString() : "");
@@ -692,7 +741,86 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
       </DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-        <div className="sm:col-span-2"><Label>Address</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. Purok 2 Kagawasan, Dimataling, Zamboanga del Sur" /></div>
+        <div className="sm:col-span-2 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="bh-address">Address</Label>
+            {isCustomAddress ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomAddress(false);
+                  setAddressPreset("Purok 4, Kagawasan, Dimataling, ZDS");
+                  setAddress("Purok 4, Kagawasan, Dimataling, ZDS");
+                }}
+                className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium cursor-pointer"
+              >
+                ← Back to dropdown selection
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomAddress(true);
+                  setAddressPreset("custom");
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+              >
+                Or type custom address
+              </button>
+            )}
+          </div>
+
+          <Select
+            value={addressPreset}
+            onValueChange={(val) => {
+              if (val === "custom") {
+                setIsCustomAddress(true);
+                setAddressPreset("custom");
+              } else {
+                setIsCustomAddress(false);
+                setAddressPreset(val);
+                setAddress(val);
+              }
+            }}
+          >
+            <SelectTrigger id="bh-address" className="h-11 rounded-xl bg-background cursor-pointer">
+              <SelectValue placeholder="Select Purok in Kagawasan, Dimataling..." />
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              {DIMATALING_ADDRESS_OPTIONS.map((grp) => (
+                <SelectGroup key={grp.group}>
+                  <SelectLabel className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1.5">
+                    📍 {grp.group}
+                  </SelectLabel>
+                  {grp.options.map((opt) => (
+                    <SelectItem key={opt} value={opt} className="text-sm cursor-pointer">
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+              <SelectSeparator />
+              <SelectItem value="custom" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 cursor-pointer">
+                ✏️ Other / Type Custom Address...
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {isCustomAddress && (
+            <div className="pt-1 animate-in fade-in-50">
+              <Input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. Purok 4, Kagawasan, Dimataling, ZDS"
+                className="h-11 rounded-xl"
+                autoFocus
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Enter your custom address or specific street name.
+              </p>
+            </div>
+          )}
+        </div>
         <div><Label>Landmark</Label><Input value={landmark ?? ""} onChange={(e) => setLandmark(e.target.value)} placeholder="e.g. Beside San Miguel Elementary School" /></div>
         <div>
           <Label>Contact number</Label>

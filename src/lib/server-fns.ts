@@ -189,17 +189,35 @@ export const sendInquiry = createServerFn({ method: "POST" })
 export const getProfile = createServerFn({ method: "GET" })
   .validator((data: { userId: string }) => data)
   .handler(async ({ data }) => {
-    const profile = await prisma.profile.findUnique({ where: { id: data.userId } });
-    return profile ? { full_name: profile.fullName, phone: profile.phone } : null;
+    const profile = (await prisma.profile.findUnique({ where: { id: data.userId } })) as any;
+    return profile
+      ? {
+          full_name: profile.fullName,
+          phone: profile.phone,
+          avatarUrl: profile.avatarUrl ?? null,
+          documents: (profile.documents as string[]) ?? [],
+        }
+      : null;
   });
 
 export const updateProfile = createServerFn({ method: "POST" })
-  .validator((data: { userId: string; fullName: string; phone: string | null }) => data)
+  .validator((data: { userId: string; fullName: string; phone: string | null; avatarUrl?: string | null; documents?: string[] }) => data)
   .handler(async ({ data }) => {
     await prisma.profile.upsert({
       where: { id: data.userId },
-      create: { id: data.userId, fullName: data.fullName, phone: data.phone },
-      update: { fullName: data.fullName, phone: data.phone },
+      create: {
+        id: data.userId,
+        fullName: data.fullName,
+        phone: data.phone,
+        avatarUrl: data.avatarUrl ?? null,
+        documents: data.documents ?? [],
+      } as any,
+      update: {
+        fullName: data.fullName,
+        phone: data.phone,
+        ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
+        ...(data.documents !== undefined ? { documents: data.documents as any } : {}),
+      } as any,
     });
     return { success: true };
   });
@@ -419,16 +437,17 @@ export const updateInquiryStatus = createServerFn({ method: "POST" })
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
 export const getAdminStats = createServerFn({ method: "GET" }).handler(async () => {
-  const [houses, pending, owners, customers, allApproved, pendingOwners] = await Promise.all([
+  const [houses, pending, owners, customers, allApproved, pendingOwners, rejectedOwners] = await Promise.all([
     prisma.boardingHouse.count(),
     prisma.boardingHouse.count({ where: { status: "pending" } }),
     prisma.userRole.count({ where: { role: "owner", isApproved: true } }),
     prisma.userRole.count({ where: { role: "customer" } }),
     prisma.boardingHouse.findMany({ where: { status: "approved" }, select: { availableVacancies: true } }),
     prisma.userRole.count({ where: { role: "owner", isApproved: false } }),
+    prisma.activityLog.count({ where: { action: "owner_rejected" } }),
   ]);
   const vacancies = allApproved.reduce((s, h) => s + h.availableVacancies, 0);
-  return { houses, pending, owners, customers, vacancies, pendingOwners };
+  return { houses, pending, owners, customers, vacancies, pendingOwners, rejectedOwners };
 });
 
 export const getAdminListings = createServerFn({ method: "GET" })
@@ -504,6 +523,8 @@ export const getAdminUsers = createServerFn({ method: "GET" }).handler(async () 
       phone: p?.phone ?? null,
       role: r.role.toLowerCase(),
       is_approved: r.isApproved,
+      avatarUrl: (p as any)?.avatarUrl ?? null,
+      documents: ((p as any)?.documents as string[]) ?? [],
     };
   });
 });
@@ -665,6 +686,8 @@ export const getPendingOwners = createServerFn({ method: "GET" }).handler(async 
       full_name: u.profile?.fullName ?? u.name ?? "—",
       email: u.profile?.email ?? u.email ?? null,
       phone: u.profile?.phone ?? null,
+      avatarUrl: (u.profile as any)?.avatarUrl ?? null,
+      documents: ((u.profile as any)?.documents as string[]) ?? [],
       createdAt: (ownerRole?.createdAt ?? u.createdAt).toISOString(),
       listings,
     };
@@ -716,13 +739,120 @@ export const approveOwnerAndListings = createServerFn({ method: "POST" })
   });
 
 export const rejectOwner = createServerFn({ method: "POST" })
-  .validator((data: { roleId?: string | null; userId: string }) => data)
+  .validator((data: { roleId?: string | null; userId: string; reason?: string }) => data)
   .handler(async ({ data }) => {
-    // Delete the role entry — owner account stays but loses the owner role
+    // 1. Delete the unapproved owner role entry
     if (data.roleId) {
-      await prisma.userRole.delete({ where: { id: data.roleId } });
+      await prisma.userRole.delete({ where: { id: data.roleId } }).catch(() => {});
     } else {
-      await prisma.userRole.deleteMany({ where: { userId: data.userId, role: "owner" } });
+      await prisma.userRole.deleteMany({ where: { userId: data.userId, role: "owner" } }).catch(() => {});
+    }
+
+    // 2. Reject any pending boarding house listings
+    await prisma.boardingHouse.updateMany({
+      where: { ownerId: data.userId, status: "pending" },
+      data: { status: "rejected" },
+    });
+
+    // 3. Log rejection into activityLog for admin reference and user notification
+    const profile = await prisma.profile.findUnique({ where: { id: data.userId } });
+    const user = await prisma.user.findUnique({ where: { id: data.userId } });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: data.userId,
+        action: "owner_rejected",
+        details: {
+          reason: data.reason?.trim() || "Incomplete or invalid documents / permits.",
+          rejectedAt: new Date().toISOString(),
+          fullName: profile?.fullName ?? user?.name ?? "Owner",
+          email: profile?.email ?? user?.email ?? null,
+          phone: profile?.phone ?? null,
+        },
+      },
+    });
+
+    return { success: true };
+  });
+
+export const getRejectedOwners = createServerFn({ method: "GET" }).handler(async () => {
+  const logs = await prisma.activityLog.findMany({
+    where: { action: "owner_rejected" },
+    include: {
+      user: {
+        include: {
+          profile: true,
+          boardingHouses: {
+            include: {
+              photos: { orderBy: { sortOrder: "asc" }, take: 1 },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return logs.map((log) => {
+    const u = log.user;
+    const details = (log.details as any) || {};
+    return {
+      logId: log.id,
+      userId: log.userId || "",
+      full_name: u?.profile?.fullName ?? details.fullName ?? u?.name ?? "—",
+      email: u?.email ?? details.email ?? null,
+      phone: u?.profile?.phone ?? details.phone ?? null,
+      avatarUrl: (u?.profile as any)?.avatarUrl ?? null,
+      documents: ((u?.profile as any)?.documents as string[]) ?? [],
+      rejectedAt: log.createdAt.toISOString(),
+      reason: details.reason ?? "Incomplete or invalid documents / permits.",
+      listingsCount: u?.boardingHouses?.length ?? 0,
+    };
+  });
+});
+
+export const reapproveRejectedOwner = createServerFn({ method: "POST" })
+  .validator((data: { userId: string; logId?: string }) => data)
+  .handler(async ({ data }) => {
+    // 1. Remove owner_rejected activity log
+    if (data.logId) {
+      await prisma.activityLog.delete({ where: { id: data.logId } }).catch(() => {});
+    } else {
+      await prisma.activityLog.deleteMany({
+        where: { userId: data.userId, action: "owner_rejected" },
+      });
+    }
+
+    // 2. Set or add owner role with isApproved = true
+    await prisma.userRole.deleteMany({ where: { userId: data.userId } });
+    await prisma.userRole.create({
+      data: {
+        userId: data.userId,
+        role: "owner",
+        isApproved: true,
+      },
+    });
+
+    // 3. Auto-publish their pending or rejected listings
+    await prisma.boardingHouse.updateMany({
+      where: { ownerId: data.userId },
+      data: { status: "approved" },
+    });
+
+    return { success: true };
+  });
+
+export const deleteRejectedOwner = createServerFn({ method: "POST" })
+  .validator((data: { logId: string; userId?: string }) => data)
+  .handler(async ({ data }) => {
+    await prisma.activityLog.delete({ where: { id: data.logId } }).catch(() => {});
+    if (data.userId) {
+      try {
+        await prisma.user.delete({ where: { id: data.userId } });
+      } catch {
+        await prisma.userRole.deleteMany({ where: { userId: data.userId } });
+        await prisma.profile.deleteMany({ where: { id: data.userId } });
+      }
     }
     return { success: true };
   });

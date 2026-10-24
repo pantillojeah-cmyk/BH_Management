@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import {
   Building2, Users, UserCheck, Home, CheckCircle2, XCircle, Search,
   MoreVertical, Edit2, Trash2, Shield, UserCog, Check, RotateCcw, CheckSquare,
-  ExternalLink,
+  ExternalLink, FileText,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { PrintButton } from "@/components/ui/print-button";
 import { ExportButton } from "@/components/ui/export-button";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import {
   getAdminUsers, getVacancyReport,
   adminUpdateUserRole, adminDeleteUser, adminDeleteUsers, adminUpdateUserProfile,
   getPendingOwners, approveOwner, rejectOwner,
+  getRejectedOwners, reapproveRejectedOwner, deleteRejectedOwner,
 } from "@/lib/server-fns";
 
 export const Route = createFileRoute("/management")({
@@ -56,11 +58,16 @@ function AdminPage() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
 
-  const refreshPendingCount = async () => {
+  const refreshCounts = async () => {
     try {
-      const data = await getPendingOwners();
-      setPendingCount(data.length);
+      const [pending, rejected] = await Promise.all([
+        getPendingOwners(),
+        getRejectedOwners(),
+      ]);
+      setPendingCount(pending.length);
+      setRejectedCount(rejected.length);
     } catch {}
   };
 
@@ -68,7 +75,7 @@ function AdminPage() {
     if (loading) return;
     if (!user) navigate({ to: "/management/login" });
     else if (role && role !== "admin") navigate({ to: "/" });
-    else refreshPendingCount();
+    else refreshCounts();
   }, [user, role, loading, navigate]);
 
   if (!user || role !== "admin") return null;
@@ -94,10 +101,15 @@ function AdminPage() {
               <TabsTrigger value="users" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">👥 Users</TabsTrigger>
               <TabsTrigger value="report" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📋 Vacancy Report</TabsTrigger>
               <TabsTrigger value="pendingowners" className="rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all flex items-center gap-1.5">
-                🔑 Pending Owners
+                🔑 Owner Approvals
                 {pendingCount > 0 && (
-                  <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-rose-500 rounded-full border border-white/40">
+                  <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-amber-500 rounded-full border border-white/40" title={`${pendingCount} pending approval`}>
                     {pendingCount}
+                  </span>
+                )}
+                {rejectedCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-rose-800 rounded-full border border-white/40" title={`${rejectedCount} rejected`}>
+                    {rejectedCount} rej
                   </span>
                 )}
               </TabsTrigger>
@@ -111,7 +123,7 @@ function AdminPage() {
           <TabsContent value="listings"><Listings /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="report"><VacancyReport /></TabsContent>
-          <TabsContent value="pendingowners"><PendingOwnersTab onActionDone={refreshPendingCount} /></TabsContent>
+          <TabsContent value="pendingowners"><PendingOwnersTab onActionDone={refreshCounts} /></TabsContent>
         </Tabs>
       </div>
     </AppShell>
@@ -1018,20 +1030,58 @@ interface PendingOwnerRow {
   full_name: string;
   email: string | null;
   phone: string | null;
+  avatarUrl?: string | null;
+  documents?: string[];
   createdAt: string;
   listings: PendingOwnerListing[];
 }
 
+interface RejectedOwnerRow {
+  logId: string;
+  userId: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  avatarUrl?: string | null;
+  documents?: string[];
+  rejectedAt: string;
+  reason: string;
+  listingsCount: number;
+}
+
 function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
+  const [subTab, setSubTab] = useState<"pending" | "rejected">("pending");
   const [rows, setRows] = useState<PendingOwnerRow[]>([]);
+  const [rejectedRows, setRejectedRows] = useState<RejectedOwnerRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+
+  // Full-screen document & avatar viewer
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+  const [viewerTitle, setViewerTitle] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  // Reject confirmation modal
+  const [rejectDialogTarget, setRejectDialogTarget] = useState<PendingOwnerRow | null>(null);
+  const [rejectReason, setRejectReason] = useState("Incomplete or invalid documents / permits.");
+
+  const openViewer = (images: string[], index = 0, title = "") => {
+    setViewerImages(images);
+    setViewerIndex(index);
+    setViewerTitle(title);
+    setViewerOpen(true);
+  };
 
   const reload = async () => {
     setLoading(true);
     try {
-      const data = await getPendingOwners();
-      setRows(data as PendingOwnerRow[]);
+      const [pending, rejected] = await Promise.all([
+        getPendingOwners(),
+        getRejectedOwners(),
+      ]);
+      setRows(pending as PendingOwnerRow[]);
+      setRejectedRows(rejected as RejectedOwnerRow[]);
       onActionDone?.();
     } finally {
       setLoading(false);
@@ -1053,12 +1103,19 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
     }
   };
 
-  const doRejectOwner = async (row: PendingOwnerRow) => {
-    if (!confirm(`Reject ${row.full_name}'s owner application? Their account will remain but without the owner role.`)) return;
-    setBusy(row.userId);
+  const confirmReject = async () => {
+    if (!rejectDialogTarget) return;
+    setBusy(rejectDialogTarget.userId);
     try {
-      await rejectOwner({ data: { roleId: row.roleId, userId: row.userId } });
-      toast.success(`${row.full_name}'s application rejected.`);
+      await rejectOwner({
+        data: {
+          roleId: rejectDialogTarget.roleId,
+          userId: rejectDialogTarget.userId,
+          reason: rejectReason.trim() || "Incomplete or invalid documents / permits.",
+        },
+      });
+      toast.success(`${rejectDialogTarget.full_name}'s application has been rejected.`);
+      setRejectDialogTarget(null);
       await reload();
     } catch (e) {
       toast.error((e as Error).message);
@@ -1067,159 +1124,549 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
     }
   };
 
-  if (loading) {
+  const doReapprove = async (row: RejectedOwnerRow) => {
+    setBusy(row.userId);
+    try {
+      await reapproveRejectedOwner({ data: { userId: row.userId, logId: row.logId } });
+      toast.success(`${row.full_name} has been restored and approved as Owner!`);
+      await reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doDeleteRejected = async (row: RejectedOwnerRow) => {
+    if (!confirm(`Permanently delete the record for ${row.full_name}?`)) return;
+    setBusy(row.userId);
+    try {
+      await deleteRejectedOwner({ data: { logId: row.logId, userId: row.userId } });
+      toast.success("Rejected application record removed.");
+      await reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (loading && rows.length === 0 && rejectedRows.length === 0) {
     return (
       <div className="mt-4 flex items-center justify-center py-16 text-muted-foreground">
-        <span className="mr-2 text-lg animate-spin">⏳</span> Loading pending owner applications…
-      </div>
-    );
-  }
-
-  if (rows.length === 0) {
-    return (
-      <div className="mt-4 rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-14 text-center">
-        <div className="text-4xl mb-3">🔑</div>
-        <div className="font-semibold text-foreground">No pending owner applications</div>
-        <div className="text-sm text-muted-foreground mt-1 mb-4">All newly registered owner accounts have been reviewed.</div>
-        <Button variant="outline" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs">
-          <RotateCcw className="h-3.5 w-3.5" />
-          Refresh
-        </Button>
+        <span className="mr-2 text-lg animate-spin">⏳</span> Loading owner applications…
       </div>
     );
   }
 
   return (
     <div className="mt-4 space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm text-muted-foreground">
-          {rows.length} new owner application{rows.length === 1 ? "" : "s"} awaiting approval
+      {/* Sub-navigation Switcher: Pending vs Rejected */}
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-border/50">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setSubTab("pending")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+              subTab === "pending"
+                ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                : "bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span>⏳ Pending Approval</span>
+            <span
+              className={`px-2 py-0.5 text-[11px] rounded-full font-bold ${
+                subTab === "pending"
+                  ? "bg-white/20 text-white"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+              }`}
+            >
+              {rows.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab("rejected")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+              subTab === "rejected"
+                ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
+                : "bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span>❌ Rejected Owners</span>
+            <span
+              className={`px-2 py-0.5 text-[11px] rounded-full font-bold ${
+                subTab === "rejected"
+                  ? "bg-white/20 text-white"
+                  : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+              }`}
+            >
+              {rejectedRows.length}
+            </span>
+          </button>
         </div>
-        <Button variant="ghost" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={reload}
+          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
           <RotateCcw className="h-3.5 w-3.5" />
           Refresh
         </Button>
       </div>
 
-      {rows.map((row) => {
-        const isBusy = busy === row.userId;
-        return (
-          <div
-            key={row.userId}
-            className="rounded-2xl border border-amber-200/70 dark:border-amber-700/40 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow space-y-4"
-          >
-            {/* Header row: Owner info + Approval buttons */}
-            <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-border/50">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-300 dark:border-amber-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-base font-bold text-amber-700 dark:text-amber-300">
-                      {row.full_name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-base text-foreground">{row.full_name}</span>
-                      <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 border-amber-300 text-amber-700 dark:text-amber-300">
-                        ⏳ Awaiting Approval
-                      </Badge>
-                      {row.listings.length > 0 && (
-                        <Badge variant="outline" className="text-xs bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 text-indigo-700 dark:text-indigo-300">
-                          {row.listings.length} Property Listing{row.listings.length === 1 ? "" : "s"}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{row.email ?? "No email"}</div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1 ml-[52px]">
-                  {row.phone && <span>📞 {row.phone}</span>}
-                  <span>📅 Registered {new Date(row.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</span>
-                </div>
+      {/* ────────────────── PENDING TAB ────────────────── */}
+      {subTab === "pending" && (
+        <>
+          {rows.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-700/40 bg-amber-50/50 dark:bg-amber-950/20 p-14 text-center">
+              <div className="text-4xl mb-3">🔑</div>
+              <div className="font-semibold text-foreground">No pending owner applications</div>
+              <div className="text-sm text-muted-foreground mt-1 mb-4">
+                All newly registered owner accounts have been reviewed.
               </div>
-
-              {/* Action Buttons: Approve Owner / Reject Owner */}
-              <div className="flex items-center gap-2.5 flex-shrink-0 self-start sm:self-center">
-                <Button
-                  size="sm"
-                  disabled={isBusy}
-                  onClick={() => doApproveOwner(row)}
-                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shadow-emerald-600/30 px-4 h-9"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {isBusy ? "Approving…" : "Approve Owner"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={isBusy}
-                  onClick={() => doRejectOwner(row)}
-                  className="gap-1.5 rounded-xl border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium px-4 h-9"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Reject
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Refresh
+              </Button>
             </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-xs text-muted-foreground">
+                Showing {rows.length} pending owner registration{rows.length === 1 ? "" : "s"} awaiting review.
+              </div>
 
-            {/* Boarding House Listings section preview */}
-            {row.listings.length > 0 ? (
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Home className="h-3.5 w-3.5 text-indigo-500" />
-                  Uploaded Properties (Auto-published once owner is approved)
-                </div>
-                <div className="space-y-2">
-                  {row.listings.map((bh) => (
-                    <div
-                      key={bh.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700/60"
-                    >
-                      <div className="flex items-center gap-3">
-                        {bh.coverPhotoUrl ? (
-                          <img
-                            src={bh.coverPhotoUrl}
-                            alt={bh.name}
-                            className="h-12 w-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-5 w-5 text-indigo-500" />
+              {rows.map((row) => {
+                const isBusy = busy === row.userId;
+                const hasDocs = row.documents && row.documents.length > 0;
+
+                return (
+                  <div
+                    key={row.userId}
+                    className="rounded-2xl border border-amber-200/70 dark:border-amber-700/40 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow space-y-4"
+                  >
+                    {/* Header row: Owner info + Approval buttons */}
+                    <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-border/50">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-3">
+                          {row.avatarUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => openViewer([row.avatarUrl!], 0, `${row.full_name} — Profile / ID Photo`)}
+                              className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-indigo-400 dark:border-indigo-500 shadow-sm flex-shrink-0 group cursor-pointer hover:opacity-90 transition-opacity"
+                              title="Click to view full photo"
+                            >
+                              <img src={row.avatarUrl} alt={row.full_name} className="h-full w-full object-cover" />
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <ExternalLink className="h-3.5 w-3.5 text-white" />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-300 dark:border-amber-600 flex items-center justify-center flex-shrink-0">
+                              <span className="text-base font-bold text-amber-700 dark:text-amber-300">
+                                {row.full_name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-base text-foreground">{row.full_name}</span>
+                              <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 border-amber-300 text-amber-700 dark:text-amber-300">
+                                ⏳ Awaiting Approval
+                              </Badge>
+                              {row.avatarUrl && (
+                                <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 text-indigo-700 dark:text-indigo-300">
+                                  📷 Profile Photo
+                                </Badge>
+                              )}
+                              {row.listings.length > 0 && (
+                                <Badge variant="outline" className="text-xs bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 text-indigo-700 dark:text-indigo-300">
+                                  {row.listings.length} Property Listing{row.listings.length === 1 ? "" : "s"}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{row.email ?? "No email"}</div>
                           </div>
-                        )}
-                        <div>
-                          <div className="font-semibold text-sm text-foreground">{bh.name}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1">
-                            📍 {bh.address}{bh.landmark ? ` (${bh.landmark})` : ""}
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
-                            <span className="font-medium text-foreground">₱{peso(bh.monthlyFee)}/mo</span>
-                            <span>•</span>
-                            <span>{bh.numRooms} rooms</span>
-                            <span>•</span>
-                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{bh.availableVacancies} vacancies</span>
-                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1 ml-0 sm:ml-[60px]">
+                          {row.phone && <span>📞 {row.phone}</span>}
+                          <span>📅 Registered {new Date(row.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-                        <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300">
-                          ✓ Auto-publishes on approval
-                        </Badge>
+                      {/* Action Buttons: Approve Owner / Reject Owner */}
+                      <div className="flex items-center gap-2.5 flex-shrink-0 self-start sm:self-center">
+                        <Button
+                          size="sm"
+                          disabled={isBusy}
+                          onClick={() => doApproveOwner(row)}
+                          className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shadow-emerald-600/30 px-4 h-9"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          {isBusy ? "Approving…" : "Approve Owner"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isBusy}
+                          onClick={() => {
+                            setRejectDialogTarget(row);
+                            setRejectReason("Incomplete or invalid documents / permits.");
+                          }}
+                          className="gap-1.5 rounded-xl border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium px-4 h-9"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Reject
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Boarding House Documents & Permits Inspection Section */}
+                    <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-950/20 p-3.5 space-y-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                          <FileText className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                          Boarding House Documents & Permits (Permit, Clearance, Fire Safety)
+                        </div>
+                        {hasDocs ? (
+                          <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 font-medium">
+                            ✓ {row.documents!.length} Document{row.documents!.length === 1 ? "" : "s"} attached (Click photo to inspect)
+                          </Badge>
+                        ) : (
+                          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                            ⚠️ No permit documents attached
+                          </span>
+                        )}
+                      </div>
+
+                      {hasDocs ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-1">
+                          {row.documents!.map((docUrl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => openViewer(row.documents!, idx, `${row.full_name} — Document / Permit ${idx + 1}`)}
+                              className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:border-indigo-400 transition-all text-left"
+                              title={`Inspect Document ${idx + 1}`}
+                            >
+                              <img src={docUrl} alt={`Permit document ${idx + 1}`} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                                <span className="text-[10px] text-white font-medium truncate flex items-center gap-1">
+                                  <ExternalLink className="h-3 w-3" /> View full
+                                </span>
+                              </div>
+                              <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded font-medium">
+                                Doc {idx + 1}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          The owner did not attach any permit photos during registration.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Boarding House Listings section preview */}
+                    {row.listings.length > 0 ? (
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
+                          <Home className="h-3.5 w-3.5 text-indigo-500" />
+                          Uploaded Properties (Auto-published once owner is approved)
+                        </div>
+                        <div className="space-y-2">
+                          {row.listings.map((bh) => (
+                            <div
+                              key={bh.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700/60"
+                            >
+                              <div className="flex items-center gap-3">
+                                {bh.coverPhotoUrl ? (
+                                  <img
+                                    src={bh.coverPhotoUrl}
+                                    alt={bh.name}
+                                    className="h-12 w-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center flex-shrink-0">
+                                    <Building2 className="h-5 w-5 text-indigo-500" />
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="font-semibold text-sm text-foreground">{bh.name}</div>
+                                  <div className="text-xs text-muted-foreground line-clamp-1">
+                                    📍 {bh.address}{bh.landmark ? ` (${bh.landmark})` : ""}
+                                  </div>
+                                  <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
+                                    <span className="font-medium text-foreground">₱{peso(bh.monthlyFee)}/mo</span>
+                                    <span>•</span>
+                                    <span>{bh.numRooms} rooms</span>
+                                    <span>•</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">{bh.availableVacancies} vacancies</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                                <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300">
+                                  ✓ Auto-publishes on approval
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground italic bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                        New owner registration. Once approved, the owner will be able to access the Owner Dashboard and post boarding house listings.
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ────────────────── REJECTED TAB ────────────────── */}
+      {subTab === "rejected" && (
+        <>
+          {rejectedRows.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-rose-200 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20 p-14 text-center">
+              <div className="text-4xl mb-3">📋</div>
+              <div className="font-semibold text-foreground">No rejected owner registrations</div>
+              <div className="text-sm text-muted-foreground mt-1 mb-4">
+                No owner applications have been rejected.
               </div>
-            ) : (
-              <div className="text-xs text-muted-foreground italic bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                New owner registration. Once approved, the owner will be able to access the Owner Dashboard and post boarding house listings.
+              <Button variant="outline" size="sm" onClick={reload} className="h-8 gap-1.5 text-xs">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Refresh
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-xs text-muted-foreground">
+                Showing {rejectedRows.length} rejected owner registration{rejectedRows.length === 1 ? "" : "s"}. You can re-approve them if their requirements have been resolved.
               </div>
-            )}
+
+              {rejectedRows.map((row) => {
+                const isBusy = busy === row.userId;
+                const hasDocs = row.documents && row.documents.length > 0;
+
+                return (
+                  <div
+                    key={row.logId}
+                    className="rounded-2xl border border-rose-200/80 dark:border-rose-800/40 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow space-y-4"
+                  >
+                    {/* Header row: Owner info + Action buttons */}
+                    <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-rose-100 dark:border-rose-900/40">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-3">
+                          {row.avatarUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => openViewer([row.avatarUrl!], 0, `${row.full_name} — Profile Photo`)}
+                              className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-rose-300 dark:border-rose-600 shadow-sm flex-shrink-0 group cursor-pointer hover:opacity-90 transition-opacity"
+                              title="Click to view full photo"
+                            >
+                              <img src={row.avatarUrl} alt={row.full_name} className="h-full w-full object-cover" />
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <ExternalLink className="h-3.5 w-3.5 text-white" />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="h-12 w-12 rounded-full bg-rose-100 dark:bg-rose-900/40 border-2 border-rose-300 dark:border-rose-700 flex items-center justify-center flex-shrink-0">
+                              <span className="text-base font-bold text-rose-700 dark:text-rose-300">
+                                {row.full_name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-base text-foreground">{row.full_name}</span>
+                              <Badge variant="outline" className="text-xs bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-700 dark:text-rose-300 font-semibold">
+                                ❌ Registration Rejected
+                              </Badge>
+                              {row.avatarUrl && (
+                                <Badge variant="outline" className="text-[10px] bg-slate-100 dark:bg-slate-800 border-slate-300 text-muted-foreground">
+                                  📷 Profile Attached
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{row.email ?? "No email"}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1 ml-0 sm:ml-[60px]">
+                          {row.phone && <span>📞 {row.phone}</span>}
+                          <span>📅 Rejected on {new Date(row.rejectedAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons: Re-approve or Delete */}
+                      <div className="flex items-center gap-2.5 flex-shrink-0 self-start sm:self-center">
+                        <Button
+                          size="sm"
+                          disabled={isBusy}
+                          onClick={() => doReapprove(row)}
+                          className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shadow-emerald-600/30 px-4 h-9"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          {isBusy ? "Processing…" : "Re-approve Owner"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isBusy}
+                          onClick={() => doDeleteRejected(row)}
+                          className="gap-1.5 rounded-xl border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium px-3 h-9"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Rejection Reason Alert Box */}
+                    <div className="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 p-3.5 text-xs text-rose-900 dark:text-rose-200 space-y-1">
+                      <div className="font-semibold flex items-center gap-1.5 text-rose-700 dark:text-rose-300">
+                        <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                        Reason for Rejection:
+                      </div>
+                      <p className="pl-5 text-rose-800 dark:text-rose-200 leading-relaxed font-medium">
+                        "{row.reason}"
+                      </p>
+                    </div>
+
+                    {/* Attached Documents & Permits Section */}
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 p-3.5 space-y-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <FileText className="h-3.5 w-3.5" />
+                          Submitted Documents / Permits
+                        </div>
+                        {hasDocs ? (
+                          <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 font-medium">
+                            {row.documents!.length} Document{row.documents!.length === 1 ? "" : "s"} (Click photo to inspect)
+                          </Badge>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground italic">
+                            No documents attached during registration
+                          </span>
+                        )}
+                      </div>
+
+                      {hasDocs && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-1">
+                          {row.documents!.map((docUrl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => openViewer(row.documents!, idx, `${row.full_name} — Rejected Document ${idx + 1}`)}
+                              className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:border-rose-400 transition-all text-left"
+                              title={`Inspect Document ${idx + 1}`}
+                            >
+                              <img src={docUrl} alt={`Permit document ${idx + 1}`} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                                <span className="text-[10px] text-white font-medium truncate flex items-center gap-1">
+                                  <ExternalLink className="h-3 w-3" /> View full
+                                </span>
+                              </div>
+                              <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded font-medium">
+                                Doc {idx + 1}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog open={!!rejectDialogTarget} onOpenChange={(open) => !open && setRejectDialogTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+              <XCircle className="h-5 w-5" />
+              Reject Owner Application
+            </DialogTitle>
+            <DialogDescription>
+              Specify the reason why <strong>{rejectDialogTarget?.full_name}</strong>'s owner registration is being rejected. This will be recorded and shown in the dashboard.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div>
+              <Label htmlFor="reject-reason" className="text-xs font-semibold">Reason for Rejection</Label>
+              <Input
+                id="reject-reason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g. Incomplete or invalid documents / permits."
+                className="mt-1.5 text-sm"
+              />
+            </div>
+
+            {/* Quick Templates */}
+            <div>
+              <div className="text-[11px] font-medium text-muted-foreground mb-1.5">Quick Suggestions:</div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  "Incomplete or missing Business permit",
+                  "Expired permit / clearance",
+                  "Blurry or illegible permit photos",
+                  "Unverified boarding house location",
+                  "Invalid owner identification / photo",
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setRejectReason(preset)}
+                    className="text-[10px] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    + {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        );
-      })}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setRejectDialogTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+              onClick={confirmReject}
+              disabled={!!busy}
+            >
+              {busy ? "Rejecting…" : "Confirm Rejection"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full-Screen Document / Photo Viewer */}
+      <ImageViewerModal
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        images={viewerImages}
+        currentIndex={viewerIndex}
+        onIndexChange={setViewerIndex}
+        title={viewerTitle}
+      />
     </div>
   );
 }
