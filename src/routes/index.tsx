@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Building2, Users, Search, ShieldCheck, MapPin, ArrowRight, UserCircle, Home, Check, Menu, X, Compass, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/")({
 
 function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { role } = useAuth();
 
   return (
     <div className="relative min-h-screen bg-background/50 font-sans text-foreground overflow-x-hidden selection:bg-emerald-500/20 selection:text-emerald-700">
@@ -136,13 +138,15 @@ function LandingPage() {
               >
                 <Building2 className="h-4 w-4 text-indigo-600" /> Property Owner Portal
               </Link>
-              <Link
-                to="/management/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-slate-500/10"
-              >
-                <ShieldCheck className="h-4 w-4 text-primary" /> Campus Admin
-              </Link>
+              {role === "admin" && (
+                <Link
+                  to="/management"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-slate-500/10"
+                >
+                  <ShieldCheck className="h-4 w-4 text-primary" /> Campus Admin
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -298,7 +302,9 @@ function LandingPage() {
           <div className="flex gap-4 text-xs">
             <Link to="/browse" className="hover:text-foreground transition-colors">Browse</Link>
             <Link to="/owner/login" className="hover:text-foreground transition-colors">Owner Portal</Link>
-            <Link to="/management/login" className="hover:text-foreground transition-colors">Admin Portal</Link>
+            {role === "admin" && (
+              <Link to="/management" className="hover:text-foreground transition-colors text-primary font-medium">Admin Portal</Link>
+            )}
           </div>
         </div>
       </footer>
