@@ -54,34 +54,39 @@ function AuthPage() {
         <div className="absolute bottom-10 right-10 h-[38rem] w-[38rem] rounded-full bg-teal-400/12 blur-[140px] dark:bg-teal-500/15 animate-float-slow" />
       </div>
 
-      <div className="hidden relative bg-gradient-to-br from-emerald-700 via-teal-800 to-emerald-900 p-12 text-white lg:flex lg:flex-col lg:justify-between overflow-hidden">
+      <div className="hidden relative bg-gradient-to-br from-emerald-700 via-teal-800 to-emerald-900 p-10 xl:p-12 text-white lg:flex lg:flex-col lg:justify-between lg:sticky lg:top-0 lg:h-screen overflow-hidden">
         <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" />
 
-        <div className="relative z-10 flex items-center gap-3">
-          <img
-            src="/logo.png?v=2026"
-            alt="ZDSPGC BH Tracker Logo"
-            className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
-          />
-          <div>
-            <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
-            <div className="text-xs text-emerald-200">ZDSPGC-Dimataling Campus</div>
+        {/* Top Header & Intro text positioned up */}
+        <div className="relative z-10 space-y-8 max-w-lg">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png?v=2026"
+              alt="ZDSPGC BH Tracker Logo"
+              className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
+            />
+            <div>
+              <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
+              <div className="text-xs text-emerald-200">ZDSPGC-Dimataling Campus</div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
+              Student Portal
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Find your boarding house near campus the easy way.</h2>
+            <p className="text-emerald-100/90 leading-relaxed text-sm">Real-time vacancies, verified listings, and direct reservation holds for students — all in one place.</p>
+            <ul className="space-y-2.5 text-sm text-emerald-100 pt-1">
+              <li className="flex items-center gap-2">• Search by rent fee, amenities, and available rooms</li>
+              <li className="flex items-center gap-2">• Save your favorite boarding houses for later</li>
+              <li className="flex items-center gap-2">• Reserve a room hold for up to 48 hours</li>
+            </ul>
           </div>
         </div>
-        <div className="relative z-10 space-y-5 max-w-lg">
-          <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
-            Student Portal
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Find your boarding house near campus the easy way.</h2>
-          <p className="text-emerald-100/90 leading-relaxed text-sm">Real-time vacancies, verified listings, and direct reservation holds for students — all in one place.</p>
-          <ul className="space-y-2.5 text-sm text-emerald-100">
-            <li className="flex items-center gap-2">• Search by rent fee, amenities, and available rooms</li>
-            <li className="flex items-center gap-2">• Save your favorite boarding houses for later</li>
-            <li className="flex items-center gap-2">• Reserve a room hold for up to 48 hours</li>
-          </ul>
-        </div>
-        <div className="relative z-10 text-xs text-emerald-200/80">For students of ZDSPGC-Dimataling.</div>
+
+        <div className="relative z-10 text-xs text-emerald-200/80 pt-6">For students of ZDSPGC-Dimataling.</div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-10">

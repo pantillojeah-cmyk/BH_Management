@@ -64,34 +64,39 @@ function OwnerAuthPage() {
         <div className="absolute bottom-10 right-10 h-[38rem] w-[38rem] rounded-full bg-blue-500/12 blur-[140px] dark:bg-blue-600/15 animate-float-slow" />
       </div>
 
-      <div className="hidden relative bg-gradient-to-br from-indigo-800 via-indigo-900 to-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between overflow-hidden">
+      <div className="hidden relative bg-gradient-to-br from-indigo-800 via-indigo-900 to-slate-950 p-10 xl:p-12 text-white lg:flex lg:flex-col lg:justify-between lg:sticky lg:top-0 lg:h-screen overflow-hidden">
         <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-blue-400/15 blur-3xl" />
 
-        <div className="relative z-10 flex items-center gap-3">
-          <img
-            src="/logo.png?v=2026"
-            alt="ZDSPGC BH Tracker Logo"
-            className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
-          />
-          <div>
-            <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
-            <div className="text-xs text-indigo-200">Owner Portal · ZDSPGC Dimataling</div>
+        {/* Top Header & Intro text positioned up */}
+        <div className="relative z-10 space-y-8 max-w-lg">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png?v=2026"
+              alt="ZDSPGC BH Tracker Logo"
+              className="h-12 w-12 rounded-full object-contain bg-white p-0.5 border-2 border-white/70 shadow-lg"
+            />
+            <div>
+              <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
+              <div className="text-xs text-indigo-200">Owner Portal · ZDSPGC Dimataling</div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
+              Property Owner Dashboard
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Manage your boarding house with ease.</h2>
+            <p className="text-indigo-100/90 leading-relaxed text-sm">Reach more students, manage vacancies in real-time, and handle inquiries securely from one intuitive dashboard.</p>
+            <ul className="space-y-2.5 text-sm text-indigo-100 pt-1">
+              <li className="flex items-center gap-2">• List and showcase your rooms with photos</li>
+              <li className="flex items-center gap-2">• Instantly update vacancy counts & rooms</li>
+              <li className="flex items-center gap-2">• Review reservations and verify tenant holds</li>
+            </ul>
           </div>
         </div>
-        <div className="relative z-10 space-y-5 max-w-lg">
-          <div className="inline-block rounded-full bg-white/20 border border-white/30 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
-            Property Owner Dashboard
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">Manage your boarding house with ease.</h2>
-          <p className="text-indigo-100/90 leading-relaxed text-sm">Reach more students, manage vacancies in real-time, and handle inquiries securely from one intuitive dashboard.</p>
-          <ul className="space-y-2.5 text-sm text-indigo-100">
-            <li className="flex items-center gap-2">• List and showcase your rooms with photos</li>
-            <li className="flex items-center gap-2">• Instantly update vacancy counts & rooms</li>
-            <li className="flex items-center gap-2">• Review reservations and verify tenant holds</li>
-          </ul>
-        </div>
-        <div className="relative z-10 text-xs text-indigo-200/80">For verified boarding house owners near ZDSPGC-Dimataling.</div>
+
+        <div className="relative z-10 text-xs text-indigo-200/80 pt-6">For verified boarding house owners near ZDSPGC-Dimataling.</div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-10">
