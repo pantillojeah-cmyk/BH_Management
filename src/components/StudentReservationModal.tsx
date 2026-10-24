@@ -144,7 +144,7 @@ export function StudentReservationModal({
                 Student Reservation Form
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Palihug i-fill out ang imong impormasyon para sa pagpa-reserve
+                Please fill out your details to secure your reservation
               </DialogDescription>
             </div>
           </div>
@@ -186,7 +186,7 @@ export function StudentReservationModal({
           {/* Full Name */}
           <div className="space-y-1.5">
             <Label htmlFor="student-name" className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-              <User className="h-3.5 w-3.5 text-emerald-600" /> Full Name / Pangalan
+              <User className="h-3.5 w-3.5 text-emerald-600" /> Full Name
             </Label>
             <Input
               id="student-name"
@@ -218,7 +218,7 @@ export function StudentReservationModal({
           {/* Home Address */}
           <div className="space-y-1.5">
             <Label htmlFor="student-address" className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-              <MapPin className="h-3.5 w-3.5 text-emerald-600" /> Address / Lugar
+              <MapPin className="h-3.5 w-3.5 text-emerald-600" /> Address
             </Label>
             <Input
               id="student-address"
@@ -233,7 +233,7 @@ export function StudentReservationModal({
           {/* Course / Program */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-              <GraduationCap className="h-3.5 w-3.5 text-emerald-600" /> Student Course / Prograrna
+              <GraduationCap className="h-3.5 w-3.5 text-emerald-600" /> Student Course
             </Label>
             
             {/* Quick buttons for the most requested courses */}
@@ -269,7 +269,7 @@ export function StudentReservationModal({
 
             {selectedCourse === "Other" && (
               <Input
-                placeholder="I-type imong kurso/course (e.g. BSA, BSED)..."
+                placeholder="Type your course / program (e.g. BSA, BSED)..."
                 value={customCourse}
                 onChange={(e) => setCustomCourse(e.target.value)}
                 className="h-10 rounded-xl bg-background/60 text-sm focus:ring-emerald-500 mt-2"
@@ -281,7 +281,7 @@ export function StudentReservationModal({
           {/* Year Level */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-              <Calendar className="h-3.5 w-3.5 text-emerald-600" /> Year Level / Tuig
+              <Calendar className="h-3.5 w-3.5 text-emerald-600" /> Year Level
             </Label>
             <div className="grid grid-cols-4 gap-2">
               {YEAR_LEVELS.map((y) => (
