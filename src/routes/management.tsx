@@ -81,26 +81,26 @@ function AdminPage() {
   if (!user || role !== "admin") return null;
   return (
     <AppShell>
-      <div className="flex items-center gap-3.5 mb-6">
+      <div className="flex flex-wrap items-center gap-3.5 mb-6">
         <img
           src="/logo.png?v=2026"
           alt="ZDSPGC BH Tracker Logo"
-          className="h-12 w-12 rounded-full object-cover border-2 border-primary/30 shadow-md"
+          className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover border-2 border-primary/30 shadow-md shrink-0"
         />
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Admin Dashboard</h1>
           <p className="text-xs text-muted-foreground">ZDSPGC Dimataling Campus · System overview & management</p>
         </div>
       </div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <Tabs defaultValue="overview" className="flex-1">
+        <Tabs defaultValue="overview" className="flex-1 w-full">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-            <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1 flex-wrap">
-              <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📊 Overview</TabsTrigger>
-              <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 Listings</TabsTrigger>
-              <TabsTrigger value="users" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">👥 Users</TabsTrigger>
-              <TabsTrigger value="report" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📋 Vacancy Report</TabsTrigger>
-              <TabsTrigger value="pendingowners" className="rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all flex items-center gap-1.5">
+            <TabsList className="h-auto min-h-11 flex-wrap sm:flex-nowrap w-full sm:w-auto rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-1 shadow-sm gap-1 overflow-x-auto">
+              <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">📊 Overview</TabsTrigger>
+              <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">🏠 Listings</TabsTrigger>
+              <TabsTrigger value="users" className="rounded-xl data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">👥 Users</TabsTrigger>
+              <TabsTrigger value="report" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">📋 Vacancy Report</TabsTrigger>
+              <TabsTrigger value="pendingowners" className="rounded-xl data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap">
                 🔑 Owner Approvals
                 {pendingCount > 0 && (
                   <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-amber-500 rounded-full border border-white/40" title={`${pendingCount} pending approval`}>
@@ -114,7 +114,7 @@ function AdminPage() {
                 )}
               </TabsTrigger>
             </TabsList>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <PrintButton />
               <ExportButton fetchUrl="/api/management/export-listings" fileName="listings.csv" />
             </div>
@@ -609,8 +609,8 @@ function UsersTab() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="border-b border-border/50 text-left text-xs uppercase text-muted-foreground bg-muted/30">
             <tr>
               <th className="w-12 px-4 py-3.5 text-center">
@@ -961,8 +961,8 @@ function VacancyReport() {
       </div>
 
       {/* Report table */}
-      <div className="overflow-hidden rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-sm">
+        <table className="w-full min-w-[560px] text-sm">
           <thead className="border-b border-border/50 text-left text-xs uppercase text-muted-foreground bg-muted/30">
             <tr>
               <th className="px-5 py-3.5 font-bold tracking-wider">Boarding House</th>
@@ -1596,7 +1596,7 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
 
       {/* Reject Confirmation Dialog */}
       <Dialog open={!!rejectDialogTarget} onOpenChange={(open) => !open && setRejectDialogTarget(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
               <XCircle className="h-5 w-5" />

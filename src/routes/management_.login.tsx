@@ -82,7 +82,7 @@ function AdminLogin() {
         <div className="absolute top-1/2 left-1/3 h-[28rem] w-[28rem] rounded-full bg-teal-500/10 blur-[120px]" />
       </div>
 
-      <div className="w-full max-w-md space-y-7 rounded-3xl bg-slate-900/70 p-8 sm:p-10 shadow-2xl border border-white/10 backdrop-blur-2xl">
+      <div className="w-full max-w-md space-y-7 rounded-2xl sm:rounded-3xl bg-slate-900/70 p-5 sm:p-10 shadow-2xl border border-white/10 backdrop-blur-2xl">
         <div className="text-center">
           <img
             src="/logo.png?v=2026"

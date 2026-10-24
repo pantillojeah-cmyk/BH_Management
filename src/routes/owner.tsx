@@ -88,25 +88,25 @@ function OwnerPage() {
   if (!user || role !== "owner") return null;
   return (
     <AppShell>
-      <div className="mb-6 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3.5">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <img
             src="/logo.png?v=2026"
             alt="ZDSPGC BH Tracker Logo"
-            className="h-12 w-12 rounded-full object-cover border-2 border-primary/30 shadow-md"
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover border-2 border-primary/30 shadow-md shrink-0"
           />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Owner Dashboard</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Owner Dashboard</h1>
             <p className="text-xs text-muted-foreground">Manage your boarding house listings, vacancies & inquiries</p>
           </div>
         </div>
       </div>
       <Tabs defaultValue="overview">
-        <TabsList className="h-11 rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-1 shadow-sm gap-1 flex-wrap">
-          <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📊 Overview</TabsTrigger>
-          <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">🏠 My Listings</TabsTrigger>
-          <TabsTrigger value="inquiries" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">💬 Inquiries</TabsTrigger>
-          <TabsTrigger value="reservations" className="rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 font-medium transition-all">📅 Reservations</TabsTrigger>
+        <TabsList className="h-auto min-h-11 flex-wrap sm:flex-nowrap w-full sm:w-auto rounded-2xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-1 shadow-sm gap-1 overflow-x-auto">
+          <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">📊 Overview</TabsTrigger>
+          <TabsTrigger value="listings" className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">🏠 My Listings</TabsTrigger>
+          <TabsTrigger value="inquiries" className="rounded-xl data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">💬 Inquiries</TabsTrigger>
+          <TabsTrigger value="reservations" className="rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap">📅 Reservations</TabsTrigger>
         </TabsList>
         <TabsContent value="overview"><OwnerOverview /></TabsContent>
         <TabsContent value="listings"><MyListings /></TabsContent>
@@ -201,7 +201,7 @@ function OwnerOverview() {
 
     {/* Charts */}
     <div className="mt-8 grid gap-6 md:grid-cols-2">
-      <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md p-5 shadow-sm">
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-5 shadow-sm">
         <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/70 mb-4">📊 Vacancies per Property</h3>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={rows.map(r => ({ name: r.name, vacancies: r.available_vacancies, rooms: r.num_rooms }))} barCategoryGap="30%">
@@ -215,7 +215,7 @@ function OwnerOverview() {
         </ResponsiveContainer>
       </div>
 
-      <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md p-5 shadow-sm">
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-800/50 backdrop-blur-md p-4 sm:p-5 shadow-sm">
         <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/70 mb-4">🥧 Status Distribution</h3>
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
@@ -744,7 +744,7 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
     : "";
 
   return (
-    <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+    <DialogContent className="max-h-[90vh] max-w-2xl w-[95vw] sm:w-full overflow-y-auto p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
       <DialogHeader>
         <DialogTitle>{isEdit ? "Edit listing" : "New boarding house listing"}</DialogTitle>
       </DialogHeader>
@@ -1397,7 +1397,7 @@ function OwnerReservations() {
         return (
           <div key={r.id} className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-2 flex-1 min-w-[260px]">
+              <div className="space-y-2 flex-1 min-w-0 w-full sm:w-auto">
                 <div className="font-bold text-base text-foreground">{r.boardingHouseName}</div>
                 {r.roomDeck && (
                   <div className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-200 dark:border-indigo-700 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">

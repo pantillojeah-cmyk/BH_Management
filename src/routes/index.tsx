@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, Users, Search, ShieldCheck, MapPin, ArrowRight, UserCircle, Home, Check } from "lucide-react";
+import { useState } from "react";
+import { Building2, Users, Search, ShieldCheck, MapPin, ArrowRight, UserCircle, Home, Check, Menu, X, Compass, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,6 +20,8 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="relative min-h-screen bg-background/50 font-sans text-foreground overflow-x-hidden selection:bg-emerald-500/20 selection:text-emerald-700">
       {/* Ambient background light orbs for glassmorphism */}
@@ -29,84 +32,139 @@ function LandingPage() {
       </div>
 
       {/* Header Navigation */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/50 dark:border-white/10 bg-background/70 px-6 py-3.5 backdrop-blur-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
-        <Link to="/" className="group flex items-center gap-3 transition-transform hover:scale-[1.02]">
-          <img
-            src="/logo.png?v=2026"
-            alt="Boarding House Vacancy Tracker"
-            className="h-11 w-11 rounded-full object-contain bg-white p-0.5 shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105"
-          />
-          <div className="flex flex-col">
-            <span className="text-base font-bold leading-tight text-slate-900 dark:text-white tracking-tight">Boarding House</span>
-            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 leading-tight">Vacancy Tracker</span>
-            <span className="text-[10px] text-muted-foreground mt-0.5">ZDSPGC – Dimataling Campus</span>
-          </div>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
-          <Link
-            to="/browse"
-            className="rounded-xl px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all"
-          >
-            Browse Listings
+      <header className="sticky top-0 z-50 border-b border-white/50 dark:border-white/10 bg-background/80 backdrop-blur-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3.5 py-2.5 sm:px-6 sm:py-3.5">
+          <Link to="/" className="group flex items-center gap-2.5 sm:gap-3 transition-transform hover:scale-[1.01] min-w-0">
+            <img
+              src="/logo.png?v=2026"
+              alt="Boarding House Vacancy Tracker"
+              className="h-9 w-9 sm:h-11 sm:w-11 rounded-full object-contain bg-white p-0.5 shadow-md border-2 border-emerald-500/40 transition-transform group-hover:scale-105 shrink-0"
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm sm:text-base font-bold leading-tight text-slate-900 dark:text-white tracking-tight truncate">
+                Boarding House
+              </span>
+              <span className="text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400 leading-tight truncate">
+                Vacancy Tracker
+              </span>
+              <span className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 truncate hidden xs:block">
+                ZDSPGC – Dimataling Campus
+              </span>
+            </div>
           </Link>
-          <Link
-            to="/owner/login"
-            className="rounded-xl px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all"
-          >
-            For Owners
-          </Link>
-        </nav>
 
-        <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="hidden sm:flex gap-2 rounded-xl border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/70 shadow-sm"
-              >
-                <UserCircle className="h-4 w-4 text-emerald-600" /> Sign In
+          <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
+            <Link
+              to="/browse"
+              className="rounded-xl px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all"
+            >
+              Browse Listings
+            </Link>
+            <Link
+              to="/owner/login"
+              className="rounded-xl px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all"
+            >
+              For Owners
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="hidden sm:flex gap-2 rounded-xl border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/70 shadow-sm"
+                >
+                  <UserCircle className="h-4 w-4 text-emerald-600" /> Sign In
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 rounded-2xl border-white/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-xl p-1.5">
+                <Link to="/customer/login" className="w-full block">
+                  <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
+                    <Users className="h-4 w-4 text-emerald-600" /> Student
+                  </DropdownMenuItem>
+                </Link>
+                <Link to="/owner/login" className="w-full block">
+                  <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
+                    <Building2 className="h-4 w-4 text-indigo-600" /> Property Owner
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Link to="/browse">
+              <Button className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-3 sm:px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/25 border border-white/30 transition-all hover:scale-[1.02]">
+                Find a Room <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 rounded-2xl border-white/60 dark:border-white/10 bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl shadow-xl p-1.5">
-              <Link to="/customer/login" className="w-full block">
-                <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
-                  <Users className="h-4 w-4 text-emerald-600" /> Student
-                </DropdownMenuItem>
-              </Link>
-              <Link to="/owner/login" className="w-full block">
-                <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
-                  <Building2 className="h-4 w-4 text-indigo-600" /> Property Owner
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </Link>
 
-          <Link to="/browse">
-            <Button className="gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/25 border border-white/30 transition-all hover:scale-[1.02]">
-              Find a Room <ArrowRight className="h-4 w-4" />
+            {/* Mobile Hamburger Menu Toggle */}
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Toggle menu"
+              className="flex md:hidden h-9 w-9 p-0 rounded-xl border-white/60 dark:border-white/15 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md"
+              onClick={() => setMobileMenuOpen((p) => !p)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-          </Link>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Panel */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/40 dark:border-white/10 bg-background/95 backdrop-blur-2xl px-4 py-4 space-y-3 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+            <div className="grid gap-1.5">
+              <Link
+                to="/browse"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+              >
+                <Compass className="h-4 w-4 text-emerald-600" /> Browse Listings
+              </Link>
+              <Link
+                to="/customer/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+              >
+                <Users className="h-4 w-4 text-emerald-600" /> Student Sign In / Register
+              </Link>
+              <Link
+                to="/owner/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-indigo-500/10 hover:text-indigo-600"
+              >
+                <Building2 className="h-4 w-4 text-indigo-600" /> Property Owner Portal
+              </Link>
+              <Link
+                to="/management/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-slate-500/10"
+              >
+                <ShieldCheck className="h-4 w-4 text-primary" /> Campus Admin
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-28">
+      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-28">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-10 items-center">
-            <div className="flex flex-col justify-center space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-4 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 backdrop-blur-md shadow-sm">
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-10 items-center">
+            <div className="flex flex-col justify-center space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 sm:px-4 sm:py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 backdrop-blur-md shadow-sm">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   Smart Campus Living · ZDSPGC Dimataling
                 </div>
-                <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl xl:text-7xl leading-[1.08]">
-                  Find Your Perfect <br />
+                <h1 className="text-3xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.12]">
+                  Find Your Perfect <br className="hidden sm:inline" />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 dark:from-emerald-400 dark:via-teal-400 dark:to-blue-400">
                     Home Away
                   </span>
                 </h1>
-                <p className="max-w-[580px] text-lg text-muted-foreground md:text-xl/relaxed">
+                <p className="max-w-[580px] text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">
                   Discover verified boarding houses, check live room vacancy statuses, and reserve your bed with instant peace of mind.
                 </p>
               </div>
@@ -115,7 +173,7 @@ function LandingPage() {
                 <Link to="/browse" className="flex-1 sm:flex-none">
                   <Button
                     size="lg"
-                    className="w-full gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-600/25 border border-white/30 text-lg h-14 px-8 transition-all hover:scale-[1.02]"
+                    className="w-full gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-600/25 border border-white/30 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 transition-all hover:scale-[1.01]"
                   >
                     <Search className="h-5 w-5" /> Browse Vacancies
                   </Button>
@@ -124,7 +182,7 @@ function LandingPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-full text-lg h-14 px-8 rounded-2xl border-white/70 dark:border-white/15 bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-sm transition-all"
+                    className="w-full text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl border-white/70 dark:border-white/15 bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-sm transition-all"
                   >
                     List Your Property
                   </Button>
@@ -132,18 +190,18 @@ function LandingPage() {
               </div>
 
               {/* Quick stats glass pills */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="glass-card rounded-2xl p-3.5 text-center">
-                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">100%</div>
-                  <div className="text-[11px] font-medium text-muted-foreground">Verified listings</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2">
+                <div className="glass-card rounded-2xl p-2.5 sm:p-3.5 text-center">
+                  <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">100%</div>
+                  <div className="text-[10px] sm:text-[11px] font-medium text-muted-foreground">Verified listings</div>
                 </div>
-                <div className="glass-card rounded-2xl p-3.5 text-center">
-                  <div className="text-2xl font-black text-teal-600 dark:text-teal-400">Real-Time</div>
-                  <div className="text-[11px] font-medium text-muted-foreground">Vacancy tracking</div>
+                <div className="glass-card rounded-2xl p-2.5 sm:p-3.5 text-center">
+                  <div className="text-xl sm:text-2xl font-black text-teal-600 dark:text-teal-400">Real-Time</div>
+                  <div className="text-[10px] sm:text-[11px] font-medium text-muted-foreground">Vacancy tracking</div>
                 </div>
-                <div className="glass-card rounded-2xl p-3.5 text-center">
-                  <div className="text-2xl font-black text-blue-600 dark:text-blue-400">48h</div>
-                  <div className="text-[11px] font-medium text-muted-foreground">Room hold lock</div>
+                <div className="glass-card rounded-2xl p-2.5 sm:p-3.5 text-center">
+                  <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">Hold Lock</div>
+                  <div className="text-[10px] sm:text-[11px] font-medium text-muted-foreground">Protected hold</div>
                 </div>
               </div>
             </div>

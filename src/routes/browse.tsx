@@ -149,28 +149,30 @@ function Browse() {
                 className="h-12 rounded-2xl bg-white text-slate-900 placeholder:text-slate-400 pl-10 pr-4 shadow-sm border border-white/80 focus-visible:ring-2 focus-visible:ring-emerald-400 text-sm font-medium"
               />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowFilters((v) => !v)}
-              className="h-12 px-5 rounded-2xl bg-emerald-950/60 hover:bg-emerald-950/80 text-white hover:text-white border border-emerald-400/50 backdrop-blur-md shadow-sm transition-all font-semibold flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <SlidersHorizontal className="h-4 w-4 text-emerald-300" />
-              <span>Filters</span>
-              <span className="text-xs text-emerald-300 font-bold">{showFilters ? "▲" : "▼"}</span>
-            </Button>
-            {/* Sort selector */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-12 rounded-2xl border border-white/80 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-            >
-              <option value="default">Sort: Default</option>
-              <option value="price_asc">Price: Low → High</option>
-              <option value="price_desc">Price: High → Low</option>
-              <option value="rating">Highest Rated</option>
-              <option value="vacancies">Most Vacancies</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowFilters((v) => !v)}
+                className="h-12 px-4 sm:px-5 flex-1 sm:flex-initial rounded-2xl bg-emerald-950/60 hover:bg-emerald-950/80 text-white hover:text-white border border-emerald-400/50 backdrop-blur-md shadow-sm transition-all font-semibold flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <SlidersHorizontal className="h-4 w-4 text-emerald-300" />
+                <span>Filters</span>
+                <span className="text-xs text-emerald-300 font-bold">{showFilters ? "▲" : "▼"}</span>
+              </Button>
+              {/* Sort selector */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="h-12 flex-1 sm:flex-initial rounded-2xl border border-white/80 bg-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="default">Sort: Default</option>
+                <option value="price_asc">Price: Low → High</option>
+                <option value="price_desc">Price: High → Low</option>
+                <option value="rating">Highest Rated</option>
+                <option value="vacancies">Most Vacancies</option>
+              </select>
+            </div>
           </div>
         </div>
       </section>

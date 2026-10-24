@@ -89,8 +89,8 @@ function AuthPage() {
         <div className="relative z-10 text-xs text-emerald-200/80 pt-6">For students of ZDSPGC-Dimataling.</div>
       </div>
 
-      <div className="flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-white/60 dark:border-white/15 shadow-2xl backdrop-blur-2xl">
+      <div className="flex items-center justify-center p-4 sm:p-10">
+        <div className="w-full max-w-md glass-panel p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/60 dark:border-white/15 shadow-2xl backdrop-blur-2xl">
           <div className="mb-6 text-center">
             <img
               src="/logo.png?v=2026"

@@ -117,12 +117,12 @@ function ReservationsPage() {
             const cfg = statusConfig[effectiveStatus] ?? statusConfig.expired;
             return (
               <div key={r.id} className="glass-card rounded-2xl border border-white/60 dark:border-white/10 bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-                <div className="flex gap-4 p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-5">
                   {/* Cover thumbnail */}
                   {r.boardingHouseCover ? (
-                    <img src={r.boardingHouseCover} alt={r.boardingHouseName} className="h-24 w-32 flex-shrink-0 rounded-xl object-cover border border-white/40 dark:border-white/10 shadow-sm" />
+                    <img src={r.boardingHouseCover} alt={r.boardingHouseName} className="h-40 sm:h-24 w-full sm:w-32 flex-shrink-0 rounded-xl object-cover border border-white/40 dark:border-white/10 shadow-sm" />
                   ) : (
-                    <div className="h-24 w-32 flex-shrink-0 rounded-xl bg-muted/60 border border-white/40 dark:border-white/10 grid place-items-center text-muted-foreground backdrop-blur-sm">
+                    <div className="h-40 sm:h-24 w-full sm:w-32 flex-shrink-0 rounded-xl bg-muted/60 border border-white/40 dark:border-white/10 grid place-items-center text-muted-foreground backdrop-blur-sm">
                       <Home className="h-7 w-7 text-muted-foreground/50" />
                     </div>
                   )}
@@ -180,7 +180,7 @@ function ReservationsPage() {
                 </div>
 
                 {isActive && (
-                  <div className="border-t border-white/50 dark:border-white/10 px-4 py-3 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md flex items-center justify-between gap-2">
+                  <div className="border-t border-white/50 dark:border-white/10 px-4 py-3 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
                     <p className="text-xs text-muted-foreground">Your spot is held. Contact the owner to confirm your move-in.</p>
                     <Button
                       size="sm"
