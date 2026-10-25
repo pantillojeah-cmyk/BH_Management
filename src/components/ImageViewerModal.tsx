@@ -43,7 +43,7 @@ export function ImageViewerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-black/95 p-4 sm:p-6 backdrop-blur-md select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-between bg-black/95 p-4 sm:p-6 backdrop-blur-md select-none animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Top Header Bar */}

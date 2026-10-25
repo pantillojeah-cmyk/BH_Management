@@ -318,6 +318,8 @@ interface UserRow {
   phone?: string | null;
   role: string;
   is_approved?: boolean;
+  avatarUrl?: string | null;
+  documents?: string[];
 }
 
 const ROLE_FILTERS = ["all", "customer", "owner", "admin"] as const;
@@ -329,6 +331,20 @@ function UsersTab() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [loading, setLoading] = useState(false);
+
+  // Full-screen document & avatar viewer
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+  const [viewerTitle, setViewerTitle] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  const openViewer = (images: string[], index = 0, title = "") => {
+    if (!images || images.length === 0) return;
+    setViewerImages(images);
+    setViewerIndex(index);
+    setViewerTitle(title);
+    setViewerOpen(true);
+  };
 
   // Edit dialog state
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
@@ -667,27 +683,65 @@ function UsersTab() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          {(u.full_name || "?")[0].toUpperCase()}
-                        </div>
-                        <span className="font-semibold text-foreground">{u.full_name}</span>
-                        {isCurrent && (
-                          <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4">
-                            You
-                          </Badge>
+                        {u.avatarUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => openViewer([u.avatarUrl!], 0, `${u.full_name} — Profile Picture`)}
+                            className="h-9 w-9 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shadow-xs hover:ring-2 hover:ring-indigo-400 transition-all shrink-0 cursor-pointer"
+                            title="Click to view full profile picture"
+                          >
+                            <img src={u.avatarUrl} alt={u.full_name} className="h-full w-full object-cover" />
+                          </button>
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-xs">
+                            {(u.full_name || "?")[0].toUpperCase()}
+                          </div>
                         )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-foreground">{u.full_name}</span>
+                            {isCurrent && (
+                              <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4">
+                                You
+                              </Badge>
+                            )}
+                          </div>
+                          {u.phone && <div className="text-[11px] text-muted-foreground">{u.phone}</div>}
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-muted-foreground text-sm">{u.email ?? "—"}</td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${roleBadgeClass}`}>
-                          {u.role === "admin" ? "🛡 Admin" : u.role === "owner" ? "🏠 Owner" : "👤 Customer"}
-                        </span>
-                        {u.role === "owner" && u.is_approved === false && (
-                          <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                            ⏳ Pending
+                      <div className="flex flex-col gap-1 items-start">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${roleBadgeClass}`}>
+                            {u.role === "admin" ? "🛡 Admin" : u.role === "owner" ? "🏠 Owner" : "👤 Customer"}
                           </span>
+                          {u.role === "owner" && u.is_approved === false && (
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                              ⏳ Pending
+                            </span>
+                          )}
+                        </div>
+
+                        {/* For owners, show attached permits quick preview badge */}
+                        {u.role === "owner" && (
+                          u.documents && u.documents.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => openViewer(u.documents!, 0, `${u.full_name} — Boarding House Permits & Documents`)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 transition-all shadow-xs cursor-pointer"
+                              title="Click to inspect uploaded permit documents"
+                            >
+                              <FileText className="h-3 w-3" />
+                              <span>{u.documents.length} Permit{u.documents.length === 1 ? "" : "s"}</span>
+                              <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                              No permits
+                            </span>
+                          )
                         )}
                       </div>
                     </td>
@@ -709,11 +763,23 @@ function UsersTab() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuContent align="end" className="w-52">
                             <DropdownMenuItem onClick={() => openEditDialog(u)}>
                               <Edit2 className="mr-2 h-4 w-4 text-muted-foreground" />
                               Edit Profile
                             </DropdownMenuItem>
+                            {u.role === "owner" && u.documents && u.documents.length > 0 && (
+                              <DropdownMenuItem onClick={() => openViewer(u.documents!, 0, `${u.full_name} — Boarding House Permits & Documents`)}>
+                                <FileText className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                View Permits ({u.documents.length})
+                              </DropdownMenuItem>
+                            )}
+                            {u.avatarUrl && (
+                              <DropdownMenuItem onClick={() => openViewer([u.avatarUrl!], 0, `${u.full_name} — Profile Picture`)}>
+                                <ExternalLink className="mr-2 h-4 w-4 text-muted-foreground" />
+                                View Profile Photo
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:bg-destructive/10 focus:text-destructive"
@@ -737,80 +803,189 @@ function UsersTab() {
 
       {/* Edit User Modal Dialog */}
       <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleSaveEdit}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UserCog className="h-5 w-5 text-primary" />
-                Edit User
-              </DialogTitle>
-              <DialogDescription>
-                Update user information.
-              </DialogDescription>
-            </DialogHeader>
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-5 sm:p-6">
+          {editingUser && (
+            <form onSubmit={handleSaveEdit}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserCog className="h-5 w-5 text-primary" />
+                  Edit User Profile
+                </DialogTitle>
+                <DialogDescription>
+                  View profile details, uploaded permits, and update account information.
+                </DialogDescription>
+              </DialogHeader>
 
-            <div className="grid gap-4 py-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-name">Full Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editForm.fullName}
-                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                  placeholder="e.g. John Doe"
-                  required
-                />
-              </div>
+              <div className="grid gap-4 py-4">
+                {/* User Profile Card with Avatar preview */}
+                <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-muted/40 border border-border/50">
+                  {editingUser.avatarUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => openViewer([editingUser.avatarUrl!], 0, `${editingUser.full_name} — Profile Picture`)}
+                      className="relative group h-14 w-14 rounded-2xl overflow-hidden border border-border shadow-xs shrink-0 cursor-pointer"
+                      title="Click to view full photo"
+                    >
+                      <img
+                        src={editingUser.avatarUrl}
+                        alt={editingUser.full_name}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <ExternalLink className="h-4 w-4" />
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-xs">
+                      {(editingUser.full_name || "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-foreground text-sm truncate">{editingUser.full_name}</span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
+                          editingUser.role === "admin"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300"
+                            : editingUser.role === "owner"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300"
+                        }`}
+                      >
+                        {editingUser.role === "owner" ? "🏠 Owner" : editingUser.role === "admin" ? "🛡 Admin" : "👤 Customer"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{editingUser.email || "No email"}</p>
+                    {editingUser.avatarUrl ? (
+                      <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium mt-0.5 flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" /> Click avatar to view full image
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">No custom profile photo</p>
+                    )}
+                  </div>
+                </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-email">Email Address</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  placeholder="user@example.com"
-                />
-              </div>
+                {/* If owner: Uploaded Boarding House Permits & Documents section */}
+                {editingUser.role === "owner" && (
+                  <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-950/20 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                        <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        Uploaded Permits & Documents
+                      </div>
+                      {editingUser.documents && editingUser.documents.length > 0 ? (
+                        <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-300 font-medium">
+                          ✓ {editingUser.documents.length} File{editingUser.documents.length === 1 ? "" : "s"} attached
+                        </Badge>
+                      ) : (
+                        <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800">
+                          ⚠️ No permits uploaded
+                        </span>
+                      )}
+                    </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-phone">Phone Number</Label>
-                <Input
-                  id="edit-phone"
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength={11}
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, "").slice(0, 11) })}
-                />
-              </div>
+                    {editingUser.documents && editingUser.documents.length > 0 ? (
+                      <>
+                        <p className="text-[11px] text-muted-foreground">
+                          Click any document photo below to inspect in full screen (Business Permit, Barangay Clearance, Fire Safety):
+                        </p>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-0.5">
+                          {editingUser.documents.map((docUrl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => openViewer(editingUser.documents!, idx, `${editingUser.full_name} — Permit Document ${idx + 1}`)}
+                              className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:border-indigo-400 transition-all text-left cursor-pointer"
+                              title={`Inspect Document ${idx + 1}`}
+                            >
+                              <img
+                                src={docUrl}
+                                alt={`Permit document ${idx + 1}`}
+                                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                                <span className="text-[10px] text-white font-medium truncate flex items-center gap-1">
+                                  <ExternalLink className="h-3 w-3" /> View full
+                                </span>
+                              </div>
+                              <div className="absolute top-1 left-1 bg-black/65 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded-md font-medium">
+                                Doc {idx + 1}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-muted-foreground p-3 rounded-xl bg-background/50 border border-dashed border-border/60">
+                        This owner has not uploaded any business permit, barangay clearance, or fire safety documents.
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground">Role</Label>
-                <div className="pt-0.5">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider border shadow-xs ${
-                      editForm.role === "admin"
-                        ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-700"
-                        : editForm.role === "owner"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-                        : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
-                    }`}
-                  >
-                    {editForm.role === "admin" ? "🛡 Admin" : editForm.role === "owner" ? "🏠 Owner" : "👤 Customer"}
-                  </span>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-name">Full Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editForm.fullName}
+                    onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                    placeholder="e.g. John Doe"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-email">Email Address</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    placeholder="user@example.com"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-phone">Phone Number</Label>
+                  <Input
+                    id="edit-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={11}
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, "").slice(0, 11) })}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Role</Label>
+                  <div className="pt-0.5">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider border shadow-xs ${
+                        editForm.role === "admin"
+                          ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-700"
+                          : editForm.role === "owner"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+                      }`}
+                    >
+                      {editForm.role === "admin" ? "🛡 Admin" : editForm.role === "owner" ? "🏠 Owner" : "👤 Customer"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingUser(null)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={() => setEditingUser(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -881,6 +1056,16 @@ function UsersTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Full-Screen Document / Photo Viewer */}
+      <ImageViewerModal
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        images={viewerImages}
+        currentIndex={viewerIndex}
+        onIndexChange={setViewerIndex}
+        title={viewerTitle}
+      />
     </div>
   );
 }

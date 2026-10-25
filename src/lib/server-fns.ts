@@ -527,7 +527,7 @@ export const getAdminUsers = createServerFn({ method: "GET" }).handler(async () 
       phone: p?.phone ?? null,
       role: r.role.toLowerCase(),
       is_approved: r.isApproved,
-      avatarUrl: (p as any)?.avatarUrl ?? null,
+      avatarUrl: (p as any)?.avatarUrl ?? u?.image ?? null,
       documents: ((p as any)?.documents as string[]) ?? [],
     };
   });
