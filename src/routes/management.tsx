@@ -709,41 +709,10 @@ function UsersTab() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel className="text-xs text-muted-foreground">
-                              Actions
-                            </DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="w-44">
                             <DropdownMenuItem onClick={() => openEditDialog(u)}>
                               <Edit2 className="mr-2 h-4 w-4 text-muted-foreground" />
-                              Edit Profile & Role
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-xs text-muted-foreground">
-                              Change Role
-                            </DropdownMenuLabel>
-                            <DropdownMenuItem
-                              disabled={u.role === "customer"}
-                              onClick={() => handleQuickRoleChange(u.id, "customer")}
-                            >
-                              <Users className="mr-2 h-4 w-4 text-blue-500" />
-                              Set as Customer
-                              {u.role === "customer" && <Check className="ml-auto h-3.5 w-3.5" />}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={u.role === "owner"}
-                              onClick={() => handleQuickRoleChange(u.id, "owner")}
-                            >
-                              <UserCheck className="mr-2 h-4 w-4 text-emerald-500" />
-                              Set as Owner
-                              {u.role === "owner" && <Check className="ml-auto h-3.5 w-3.5" />}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={u.role === "admin"}
-                              onClick={() => handleQuickRoleChange(u.id, "admin")}
-                            >
-                              <Shield className="mr-2 h-4 w-4 text-purple-500" />
-                              Set as Admin
-                              {u.role === "admin" && <Check className="ml-auto h-3.5 w-3.5" />}
+                              Edit Profile
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -776,7 +745,7 @@ function UsersTab() {
                 Edit User
               </DialogTitle>
               <DialogDescription>
-                Update user information and assign system roles.
+                Update user information.
               </DialogDescription>
             </DialogHeader>
 
@@ -816,22 +785,20 @@ function UsersTab() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="edit-role">Role</Label>
-                <Select
-                  value={editForm.role}
-                  onValueChange={(val: "customer" | "owner" | "admin") =>
-                    setEditForm({ ...editForm, role: val })
-                  }
-                >
-                  <SelectTrigger id="edit-role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="customer">Customer (Search & Bookings)</SelectItem>
-                    <SelectItem value="owner">Owner (Listings Management)</SelectItem>
-                    <SelectItem value="admin">Admin (Full System Access)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs font-semibold text-muted-foreground">Role</Label>
+                <div className="pt-0.5">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider border shadow-xs ${
+                      editForm.role === "admin"
+                        ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-700"
+                        : editForm.role === "owner"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+                    }`}
+                  >
+                    {editForm.role === "admin" ? "🛡 Admin" : editForm.role === "owner" ? "🏠 Owner" : "👤 Customer"}
+                  </span>
+                </div>
               </div>
             </div>
 
