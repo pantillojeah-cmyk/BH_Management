@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Phone, MapPin, Bed, Heart, MessageSquare, ArrowLeft, Star,
-  ChevronLeft, ChevronRight, CalendarCheck, Clock, BedDouble, Lock, CheckCircle2, Maximize2, Users
+  ChevronLeft, ChevronRight, CalendarCheck, Clock, BedDouble, Lock, CheckCircle2, Maximize2, Users, FileText
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,8 @@ export const Route = createFileRoute("/listing/$id")({
 
 interface BH {
   id: string; owner_id: string | null; name: string; address: string; landmark: string | null;
-  contact_number: string; description: string | null; monthly_fee: number; num_rooms: number;
+  contact_number: string; description: string | null; terms_and_conditions?: string | null; termsAndConditions?: string | null;
+  monthly_fee: number; num_rooms: number;
   available_vacancies: number; room_capacity?: number; price_type?: string; amenities: string[]; cover_photo_url: string | null;
   latitude?: number | null; longitude?: number | null;
   avg_rating: number | null; review_count: number;
@@ -275,6 +276,7 @@ function ListingDetail() {
     setBh({
       ...rawBh,
       amenities: (rawBh.amenities ?? []).map((a) => (a === "Common Room" ? "Comfort Room" : a)),
+      terms_and_conditions: rawBh.terms_and_conditions ?? (rawBh as any).termsAndConditions ?? null,
     });
     setPhotos(result.photos.filter(Boolean));
     setReviews(result.reviews as ReviewRow[]);
@@ -548,6 +550,19 @@ function ListingDetail() {
             </div>
             {bh.landmark && <div className="text-xs text-muted-foreground">Landmark: {bh.landmark}</div>}
             {bh.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{bh.description}</p>}
+
+            {/* Terms and Conditions / House Rules */}
+            {bh.terms_and_conditions && (
+              <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-4 backdrop-blur-sm shadow-xs">
+                <div className="flex items-center gap-2 mb-2 text-amber-800 dark:text-amber-300 font-bold text-sm">
+                  <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span>Terms and Conditions / House Rules</span>
+                </div>
+                <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed text-foreground/90">
+                  {bh.terms_and_conditions}
+                </p>
+              </div>
+            )}
 
             <div className="mt-6">
               <div className="mb-3 text-sm font-semibold">Amenities</div>
@@ -900,6 +915,7 @@ function ListingDetail() {
           roomName={activeRoom.name}
           monthlyFee={bh.monthly_fee}
           initialStudentName={user?.name || ""}
+          termsAndConditions={bh.terms_and_conditions}
           isSubmitting={reserving}
         />
       )}

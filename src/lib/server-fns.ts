@@ -12,6 +12,7 @@ export const getApprovedListings = createServerFn({ method: "GET" }).handler(asy
       monthlyFee: true, numRooms: true, availableVacancies: true,
       roomCapacity: true, priceType: true,
       amenities: true, coverPhotoUrl: true, latitude: true, longitude: true,
+      termsAndConditions: true,
       reviews: { select: { rating: true } },
       photos: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
     },
@@ -30,6 +31,8 @@ export const getApprovedListings = createServerFn({ method: "GET" }).handler(asy
       price_type: h.priceType ?? "per_person",
       amenities: (h.amenities || []).map((a: string) => a === "Common Room" ? "Comfort Room" : a),
       cover_photo_url: h.coverPhotoUrl,
+      termsAndConditions: h.termsAndConditions,
+      terms_and_conditions: h.termsAndConditions,
       latitude: h.latitude, longitude: h.longitude,
       photos: h.photos.map(p => p.url),
       avg_rating: avgRating, review_count: reviewCount,
@@ -88,6 +91,8 @@ export const getListingById = createServerFn({ method: "GET" })
         num_rooms: bh.numRooms, available_vacancies: bh.availableVacancies,
         room_capacity: bh.roomCapacity ?? 1, price_type: bh.priceType ?? "per_person",
         amenities: (bh.amenities || []).map((a: string) => a === "Common Room" ? "Comfort Room" : a), cover_photo_url: bh.coverPhotoUrl,
+        terms_and_conditions: bh.termsAndConditions,
+        termsAndConditions: bh.termsAndConditions,
         latitude: bh.latitude, longitude: bh.longitude,
         avg_rating: avgRating, review_count: reviewCount,
       },
@@ -242,6 +247,8 @@ export const getOwnerListings = createServerFn({ method: "GET" })
       price_type: h.priceType ?? "per_person",
       amenities: (h.amenities || []).map((a: string) => a === "Common Room" ? "Comfort Room" : a),
       cover_photo_url: h.coverPhotoUrl, status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
+      termsAndConditions: h.termsAndConditions,
+      terms_and_conditions: h.termsAndConditions,
       latitude: h.latitude, longitude: h.longitude,
       reservationHoldHours: h.reservationHoldHours ?? 48,
       extraPhotos: h.photos.map((p: any) => p.url),
@@ -278,6 +285,7 @@ export const upsertListing = createServerFn({ method: "POST" })
     contactNumber: string; description: string | null; monthlyFee: number; numRooms: number;
     availableVacancies: number; roomCapacity?: number; priceType?: string;
     amenities: string[]; coverPhotoUrl: string | null;
+    termsAndConditions?: string | null;
     latitude?: number | null; longitude?: number | null;
     extraPhotos?: string[];
     reservationHoldHours?: number;
@@ -291,6 +299,7 @@ export const upsertListing = createServerFn({ method: "POST" })
         data: {
           name: data.name, address: data.address, landmark: data.landmark,
           contactNumber: data.contactNumber, description: data.description,
+          termsAndConditions: data.termsAndConditions !== undefined ? data.termsAndConditions : undefined,
           monthlyFee: data.monthlyFee, numRooms: data.numRooms,
           availableVacancies: data.availableVacancies,
           roomCapacity: data.roomCapacity !== undefined ? data.roomCapacity : undefined,
@@ -314,7 +323,9 @@ export const upsertListing = createServerFn({ method: "POST" })
         data: {
           ownerId: data.ownerId, name: data.name, address: data.address,
           landmark: data.landmark, contactNumber: data.contactNumber,
-          description: data.description, monthlyFee: data.monthlyFee,
+          description: data.description,
+          termsAndConditions: data.termsAndConditions ?? null,
+          monthlyFee: data.monthlyFee,
           numRooms: data.numRooms, availableVacancies: data.availableVacancies,
           roomCapacity: data.roomCapacity ?? 1,
           priceType: data.priceType ?? "per_person",

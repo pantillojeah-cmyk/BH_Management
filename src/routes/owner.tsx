@@ -67,7 +67,8 @@ function findMatchingAddressPreset(raw: string | null | undefined): string {
 
 interface BHRow {
   id: string; name: string; address: string; landmark: string | null; contact_number: string;
-  description: string | null; monthly_fee: number; num_rooms: number; available_vacancies: number;
+  description: string | null; termsAndConditions?: string | null; terms_and_conditions?: string | null;
+  monthly_fee: number; num_rooms: number; available_vacancies: number;
   room_capacity?: number; price_type?: string;
   amenities: string[]; cover_photo_url: string | null; status: "pending" | "approved" | "rejected";
   latitude?: number | null; longitude?: number | null;
@@ -551,6 +552,9 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   const [locating, setLocating] = useState(false);
   const [contact, setContact] = useState(initial?.contact_number ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [termsAndConditions, setTermsAndConditions] = useState(
+    initial?.termsAndConditions ?? (initial as any)?.terms_and_conditions ?? ""
+  );
   const [fee, setFee] = useState(initial?.monthly_fee?.toString() ?? "");
   const [priceType, setPriceType] = useState<string>(initial?.price_type ?? "per_person");
   const [roomCapacity, setRoomCapacity] = useState(initial?.room_capacity?.toString() ?? "2");
@@ -707,7 +711,9 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           id: isEdit ? initial!.id : undefined,
           ownerId: user.id, name: name.trim(), address: address.trim(),
           landmark: landmark.trim() || null, contactNumber: contact.trim(),
-          description: description.trim() || null, monthlyFee: Number(fee) || 0,
+          description: description.trim() || null,
+          termsAndConditions: termsAndConditions.trim() || null,
+          monthlyFee: Number(fee) || 0,
           numRooms: Number(rooms) || 0, availableVacancies: Number(vacancies) || 0,
           roomCapacity: Number(roomCapacity) || 1, priceType,
           amenities, coverPhotoUrl: coverPath, extraPhotos: extraPhotos,
@@ -1105,7 +1111,24 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
           </div>
         </div>
 
-        <div className="sm:col-span-2"><Label>Description</Label><Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} maxLength={2000} /></div>
+        <div className="sm:col-span-2">
+          <Label>Description</Label>
+          <Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} maxLength={2000} placeholder="Describe the boarding house, room features, environment..." />
+        </div>
+        <div className="sm:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <Label>Terms and Conditions</Label>
+            <span className="text-[11px] text-muted-foreground">House rules, policies & agreements</span>
+          </div>
+          <Textarea
+            rows={4}
+            value={termsAndConditions ?? ""}
+            onChange={(e) => setTermsAndConditions(e.target.value)}
+            maxLength={3000}
+            placeholder="e.g.&#10;• 1 month advance, 1 month deposit required upon move-in&#10;• 10:00 PM curfew&#10;• Visitors allowed until 8:00 PM only&#10;• Strictly no smoking or alcoholic drinks inside premises&#10;• Keep common areas clean after use"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">Specify boarding house rules, curfew, visitor policy, and payment terms for tenants.</p>
+        </div>
         <div className="sm:col-span-2">
           <Label>Amenities</Label>
           <p className="text-xs text-muted-foreground mt-0.5 mb-2">Select amenities your boarding house offers, then optionally upload photos so tenants can see what each amenity looks like.</p>

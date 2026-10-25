@@ -135,6 +135,7 @@ model BoardingHouse {
   ownerId            String?
   name               String
   description        String?
+  termsAndConditions String?
   address            String
   landmark           String?
   contactNumber      String

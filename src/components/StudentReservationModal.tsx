@@ -41,6 +41,7 @@ interface StudentReservationModalProps {
   initialStudentName?: string;
   initialContactNumber?: string;
   initialAddress?: string;
+  termsAndConditions?: string | null;
   isSubmitting?: boolean;
 }
 
@@ -100,8 +101,10 @@ export function StudentReservationModal({
   initialStudentName = "",
   initialContactNumber = "",
   initialAddress = "",
+  termsAndConditions,
   isSubmitting = false,
 }: StudentReservationModalProps) {
+  const [showTerms, setShowTerms] = useState(false);
   // Separated Name Fields
   const initialParsed = parseFullName(initialStudentName);
   const [lastName, setLastName] = useState(initialParsed.last);
@@ -267,6 +270,30 @@ export function StudentReservationModal({
             )}
           </div>
         </div>
+
+        {/* Boarding House Terms & Conditions */}
+        {termsAndConditions && (
+          <div className="rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3 text-xs space-y-1.5">
+            <div className="flex items-center justify-between font-semibold text-amber-800 dark:text-amber-300">
+              <span className="flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                Boarding House Rules & Terms
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowTerms((v) => !v)}
+                className="text-[11px] font-medium text-amber-700 dark:text-amber-300 underline hover:text-amber-900 dark:hover:text-amber-100 cursor-pointer"
+              >
+                {showTerms ? "Hide Rules" : "View Rules"}
+              </button>
+            </div>
+            {showTerms && (
+              <p className="text-[11px] leading-relaxed text-foreground/90 whitespace-pre-wrap pt-1.5 border-t border-amber-500/20">
+                {termsAndConditions}
+              </p>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2">
