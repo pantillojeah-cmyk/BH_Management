@@ -21,7 +21,7 @@ export const Route = createFileRoute("/browse")({
   component: Browse,
 });
 
-const COMMON_AMENITIES = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator"];
+const COMMON_AMENITIES = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator", "Comfort Room"];
 
 function Browse() {
   const { user, role, loading: authLoading } = useAuth();
@@ -54,6 +54,7 @@ function Browse() {
         if (!existing) {
           map.set(key, {
             ...h,
+            amenities: (h.amenities || []).map((a) => (a === "Common Room" ? "Comfort Room" : a)),
             photos: Array.from(new Set(itemPhotos)),
           });
         } else {

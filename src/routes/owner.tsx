@@ -31,7 +31,7 @@ export const Route = createFileRoute("/owner")({
   component: OwnerPage,
 });
 
-const AMENITY_OPTIONS = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator", "Common Room", "Garden"];
+const AMENITY_OPTIONS = ["Wi-Fi", "Water", "Electricity", "Air Conditioning", "Kitchen", "Laundry", "Parking", "CCTV", "Study Area", "Generator", "Comfort Room", "Garden"];
 
 export const DIMATALING_ADDRESS_OPTIONS = [
   {
@@ -559,7 +559,9 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   const [reservationHoldHours, setReservationHoldHours] = useState<string>(
     initial?.reservationHoldHours?.toString() ?? "48"
   );
-  const [amenities, setAmenities] = useState<string[]>(initial?.amenities ?? []);
+  const [amenities, setAmenities] = useState<string[]>(
+    (initial?.amenities ?? []).map((a) => (a === "Common Room" ? "Comfort Room" : a))
+  );
   const [amenityPhotos, setAmenityPhotos] = useState<Record<string, string[]>>({});
   const [extraPhotos, setExtraPhotos] = useState<string[]>(initial?.extraPhotos ?? []);
   const [coverPreview, setCoverPreview] = useState<string | null>(initial?.cover_photo_url ?? null);
@@ -570,7 +572,13 @@ function ListingDialog({ initial, onSaved }: { initial: BHRow | null; onSaved: (
   useEffect(() => {
     if (initial?.id) {
       getAmenityPhotos({ data: { boardingHouseId: initial.id } }).then((data) => {
-        setAmenityPhotos(data as Record<string, string[]>);
+        const raw = (data as Record<string, string[]>) ?? {};
+        const mapped: Record<string, string[]> = {};
+        for (const [k, v] of Object.entries(raw)) {
+          const key = k === "Common Room" ? "Comfort Room" : k;
+          mapped[key] = [...(mapped[key] ?? []), ...v];
+        }
+        setAmenityPhotos(mapped);
       });
     }
   }, [initial?.id]);

@@ -271,11 +271,21 @@ function ListingDetail() {
   const load = async () => {
     const result = await getListingById({ data: { id } });
     if (!result) { toast.error("Listing not found"); navigate({ to: "/browse" }); return; }
-    setBh(result.bh as BH);
+    const rawBh = result.bh as BH;
+    setBh({
+      ...rawBh,
+      amenities: (rawBh.amenities ?? []).map((a) => (a === "Common Room" ? "Comfort Room" : a)),
+    });
     setPhotos(result.photos.filter(Boolean));
     setReviews(result.reviews as ReviewRow[]);
     if (result.amenityPhotos) {
-      setAmenityPhotos(result.amenityPhotos as Record<string, string[]>);
+      const raw = (result.amenityPhotos as Record<string, string[]>) ?? {};
+      const mapped: Record<string, string[]> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        const key = k === "Common Room" ? "Comfort Room" : k;
+        mapped[key] = [...(mapped[key] ?? []), ...v];
+      }
+      setAmenityPhotos(mapped);
     }
   };
 

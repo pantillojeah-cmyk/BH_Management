@@ -28,7 +28,7 @@ export const getApprovedListings = createServerFn({ method: "GET" }).handler(asy
       available_vacancies: h.availableVacancies,
       room_capacity: h.roomCapacity ?? 1,
       price_type: h.priceType ?? "per_person",
-      amenities: h.amenities,
+      amenities: (h.amenities || []).map((a: string) => a === "Common Room" ? "Comfort Room" : a),
       cover_photo_url: h.coverPhotoUrl,
       latitude: h.latitude, longitude: h.longitude,
       photos: h.photos.map(p => p.url),
@@ -76,8 +76,9 @@ export const getListingById = createServerFn({ method: "GET" })
       : null;
     const amenityPhotos: Record<string, string[]> = {};
     for (const row of amenityPhotoRows) {
-      if (!amenityPhotos[row.amenityName]) amenityPhotos[row.amenityName] = [];
-      amenityPhotos[row.amenityName].push(row.url);
+      const name = row.amenityName === "Common Room" ? "Comfort Room" : row.amenityName;
+      if (!amenityPhotos[name]) amenityPhotos[name] = [];
+      amenityPhotos[name].push(row.url);
     }
     return {
       bh: {
@@ -86,7 +87,7 @@ export const getListingById = createServerFn({ method: "GET" })
         description: bh.description, monthly_fee: bh.monthlyFee,
         num_rooms: bh.numRooms, available_vacancies: bh.availableVacancies,
         room_capacity: bh.roomCapacity ?? 1, price_type: bh.priceType ?? "per_person",
-        amenities: bh.amenities, cover_photo_url: bh.coverPhotoUrl,
+        amenities: (bh.amenities || []).map((a: string) => a === "Common Room" ? "Comfort Room" : a), cover_photo_url: bh.coverPhotoUrl,
         latitude: bh.latitude, longitude: bh.longitude,
         avg_rating: avgRating, review_count: reviewCount,
       },
@@ -239,7 +240,7 @@ export const getOwnerListings = createServerFn({ method: "GET" })
       available_vacancies: h.availableVacancies,
       room_capacity: h.roomCapacity ?? 1,
       price_type: h.priceType ?? "per_person",
-      amenities: h.amenities,
+      amenities: (h.amenities || []).map((a: string) => a === "Common Room" ? "Comfort Room" : a),
       cover_photo_url: h.coverPhotoUrl, status: h.status.toLowerCase() as "pending" | "approved" | "rejected",
       latitude: h.latitude, longitude: h.longitude,
       reservationHoldHours: h.reservationHoldHours ?? 48,
@@ -390,8 +391,9 @@ export const getAmenityPhotos = createServerFn({ method: "GET" })
     // Group by amenityName
     const grouped: Record<string, string[]> = {};
     for (const row of rows) {
-      if (!grouped[row.amenityName]) grouped[row.amenityName] = [];
-      grouped[row.amenityName].push(row.url);
+      const name = row.amenityName === "Common Room" ? "Comfort Room" : row.amenityName;
+      if (!grouped[name]) grouped[name] = [];
+      grouped[name].push(row.url);
     }
     return grouped;
   });
