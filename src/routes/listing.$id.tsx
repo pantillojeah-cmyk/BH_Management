@@ -17,6 +17,7 @@ import {
 } from "@/lib/server-fns";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { StudentReservationModal, type StudentReservationFormData } from "@/components/StudentReservationModal";
+import { filterProfanity } from "@/lib/profanity";
 
 export const Route = createFileRoute("/listing/$id")({
   component: ListingDetail,
@@ -497,7 +498,8 @@ function ListingDetail() {
     if (myRating === 0) { toast.error("Please select a star rating"); return; }
     setSubmittingReview(true);
     try {
-      await submitReview({ data: { boardingHouseId: id, customerId: user.id, rating: myRating, comment: myComment } });
+      const cleanComment = filterProfanity(myComment);
+      await submitReview({ data: { boardingHouseId: id, customerId: user.id, rating: myRating, comment: cleanComment } });
       toast.success("Review submitted!");
       await load(); // refresh reviews and avg rating
     } catch (e) { toast.error((e as Error).message); }
@@ -767,7 +769,7 @@ function ListingDetail() {
                       </div>
                       <StarDisplay rating={r.rating} />
                     </div>
-                    {r.comment && <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{r.comment}</p>}
+                    {r.comment && <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{filterProfanity(r.comment)}</p>}
                   </div>
                 ))}
               </div>

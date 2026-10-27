@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prisma } from "@/lib/db";
 import { randomBytes, scrypt } from "node:crypto";
+import { filterProfanity } from "@/lib/profanity";
 
 // ─── Boarding Houses ──────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ export const getListingById = createServerFn({ method: "GET" })
       reviews: reviews.map((r) => ({
         id: r.id,
         rating: r.rating,
-        comment: r.comment,
+        comment: r.comment ? filterProfanity(r.comment) : null,
         created_at: r.createdAt.toISOString(),
         customer_name: r.customer.name ?? "Anonymous",
         customer_id: r.customerId,
@@ -910,10 +911,11 @@ export const submitReview = createServerFn({ method: "POST" })
     }
 
     const rating = Math.min(5, Math.max(1, Math.round(data.rating)));
+    const cleanComment = data.comment ? filterProfanity(data.comment) : null;
     await prisma.review.upsert({
       where: { customerId_boardingHouseId: { customerId: data.customerId, boardingHouseId: data.boardingHouseId } },
-      create: { customerId: data.customerId, boardingHouseId: data.boardingHouseId, rating, comment: data.comment || null },
-      update: { rating, comment: data.comment || null },
+      create: { customerId: data.customerId, boardingHouseId: data.boardingHouseId, rating, comment: cleanComment },
+      update: { rating, comment: cleanComment },
     });
     return { success: true };
   });
