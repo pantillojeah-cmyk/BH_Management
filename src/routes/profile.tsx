@@ -85,18 +85,20 @@ function Profile() {
     });
   }, [user]);
 
+  const capitalizeWords = (str: string) => str.replace(/\b\w/g, (c) => c.toUpperCase());
+
   const save = async () => {
     if (!user) return;
-    const cleanLast = lastName.trim();
-    const cleanFirst = firstName.trim();
-    const cleanMi = middleInitial.trim().replace(/\.?$/, middleInitial.trim() ? "." : "");
+    const cleanFirst = capitalizeWords(firstName.trim());
+    const cleanLast = capitalizeWords(lastName.trim());
+    const cleanMi = middleInitial.trim().toUpperCase().replace(/\.?$/, middleInitial.trim() ? "." : "");
 
-    if (!cleanLast) {
-      toast.error("Last name is required");
+    if (!cleanFirst) {
+      toast.error("First Name is required");
       return;
     }
-    if (!cleanFirst) {
-      toast.error("First name is required");
+    if (!cleanLast) {
+      toast.error("Last Name is required");
       return;
     }
     if (!phone.trim()) {
@@ -263,44 +265,47 @@ function Profile() {
 
           {/* Name & Contact Info Form */}
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Last name
-              </Label>
-              <Input
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="e.g. Dela Cruz"
-                maxLength={100}
-                className="h-11 rounded-xl"
-              />
-            </div>
-
             <div className="grid grid-cols-12 gap-3">
               <div className="col-span-8 space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  First name
+                  First Name
                 </Label>
                 <Input
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => setFirstName(capitalizeWords(e.target.value))}
                   placeholder="e.g. Juan"
                   maxLength={100}
+                  autoCapitalize="words"
                   className="h-11 rounded-xl"
                 />
               </div>
               <div className="col-span-4 space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  M.I.
+                  Middle Initial
                 </Label>
                 <Input
                   value={middleInitial}
                   onChange={(e) => setMiddleInitial(e.target.value.toUpperCase())}
                   placeholder="e.g. M."
                   maxLength={4}
+                  autoCapitalize="characters"
                   className="h-11 rounded-xl"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Last Name
+              </Label>
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(capitalizeWords(e.target.value))}
+                placeholder="e.g. Dela Cruz"
+                maxLength={100}
+                autoCapitalize="words"
+                className="h-11 rounded-xl"
+              />
             </div>
 
             <div className="space-y-1.5">

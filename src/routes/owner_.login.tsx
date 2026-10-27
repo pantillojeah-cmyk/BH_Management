@@ -309,26 +309,28 @@ function SignUpForm() {
     return null;
   };
 
-  const lastNameError = lastNameTouched && !lastName.trim() ? "Last name is required." : null;
-  const firstNameError = firstNameTouched && !firstName.trim() ? "First name is required." : null;
+  const capitalizeWords = (str: string) => str.replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const firstNameError = firstNameTouched && !firstName.trim() ? "First Name is required." : null;
+  const lastNameError = lastNameTouched && !lastName.trim() ? "Last Name is required." : null;
   const phoneError = getPhoneError(phone, phoneTouched);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLastNameTouched(true);
     setFirstNameTouched(true);
+    setLastNameTouched(true);
     setPhoneTouched(true);
 
-    const cleanLast = lastName.trim();
-    const cleanFirst = firstName.trim();
-    const cleanMi = middleInitial.trim().replace(/\.?$/, middleInitial.trim() ? "." : "");
+    const cleanFirst = capitalizeWords(firstName.trim());
+    const cleanLast = capitalizeWords(lastName.trim());
+    const cleanMi = middleInitial.trim().toUpperCase().replace(/\.?$/, middleInitial.trim() ? "." : "");
 
-    if (!cleanLast) {
-      toast.error("Last name is required.");
+    if (!cleanFirst) {
+      toast.error("First Name is required.");
       return;
     }
-    if (!cleanFirst) {
-      toast.error("First name is required.");
+    if (!cleanLast) {
+      toast.error("Last Name is required.");
       return;
     }
 
@@ -474,36 +476,17 @@ function SignUpForm() {
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="su-lastname">Last name</Label>
-        <Input
-          id="su-lastname"
-          placeholder="e.g. Dela Cruz"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          onBlur={() => setLastNameTouched(true)}
-          required
-          autoComplete="family-name"
-          className={lastNameError ? "border-red-500 focus-visible:ring-red-500" : ""}
-        />
-        {lastNameError && (
-          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
-            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            <span>{lastNameError}</span>
-          </p>
-        )}
-      </div>
-
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-8">
-          <Label htmlFor="su-firstname">First name</Label>
+          <Label htmlFor="su-firstname">First Name</Label>
           <Input
             id="su-firstname"
             placeholder="e.g. Juan"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={(e) => setFirstName(capitalizeWords(e.target.value))}
             onBlur={() => setFirstNameTouched(true)}
             required
+            autoCapitalize="words"
             autoComplete="given-name"
             className={firstNameError ? "border-red-500 focus-visible:ring-red-500" : ""}
           />
@@ -515,16 +498,38 @@ function SignUpForm() {
           )}
         </div>
         <div className="col-span-4">
-          <Label htmlFor="su-mi">Middle initial</Label>
+          <Label htmlFor="su-mi">Middle Initial</Label>
           <Input
             id="su-mi"
             placeholder="e.g. M."
             maxLength={4}
             value={middleInitial}
             onChange={(e) => setMiddleInitial(e.target.value.toUpperCase())}
+            autoCapitalize="characters"
             autoComplete="additional-name"
           />
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="su-lastname">Last Name</Label>
+        <Input
+          id="su-lastname"
+          placeholder="e.g. Dela Cruz"
+          value={lastName}
+          onChange={(e) => setLastName(capitalizeWords(e.target.value))}
+          onBlur={() => setLastNameTouched(true)}
+          required
+          autoCapitalize="words"
+          autoComplete="family-name"
+          className={lastNameError ? "border-red-500 focus-visible:ring-red-500" : ""}
+        />
+        {lastNameError && (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{lastNameError}</span>
+          </p>
+        )}
       </div>
 
       <div>

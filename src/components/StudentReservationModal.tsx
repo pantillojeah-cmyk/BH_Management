@@ -180,17 +180,19 @@ export function StudentReservationModal({
     e.preventDefault();
     setError(null);
 
-    if (!lastName.trim()) {
-      setError("Please enter the student's last name.");
-      return;
-    }
+    const capitalizeWords = (str: string) => str.replace(/\b\w/g, (c) => c.toUpperCase());
+
     if (!firstName.trim()) {
       setError("Please enter the student's first name.");
       return;
     }
+    if (!lastName.trim()) {
+      setError("Please enter the student's last name.");
+      return;
+    }
 
-    const cleanLast = lastName.trim();
-    const cleanFirst = firstName.trim();
+    const cleanFirst = capitalizeWords(firstName.trim());
+    const cleanLast = capitalizeWords(lastName.trim());
     const cleanMi = middleInitial.trim().toUpperCase().replace(/\.?$/, "");
     const finalStudentName = `${cleanLast}, ${cleanFirst}${cleanMi ? ` ${cleanMi}.` : ""}`;
 
@@ -303,30 +305,20 @@ export function StudentReservationModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-          {/* Separated Name: Last Name, First Name, Middle Initial */}
+          {/* Separated Name: First Name, Middle Initial, Last Name */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
               <User className="h-3.5 w-3.5 text-emerald-600" /> Student Name
             </Label>
             <div className="grid grid-cols-12 gap-2">
-              <div className="col-span-12 sm:col-span-5 space-y-1">
-                <span className="text-[11px] font-medium text-muted-foreground">Last Name</span>
-                <Input
-                  id="student-last-name"
-                  placeholder="e.g. Suarez"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="h-10 rounded-xl bg-background/60 text-sm focus:ring-emerald-500"
-                  required
-                />
-              </div>
               <div className="col-span-8 sm:col-span-5 space-y-1">
                 <span className="text-[11px] font-medium text-muted-foreground">First Name</span>
                 <Input
                   id="student-first-name"
                   placeholder="e.g. Jaber"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => setFirstName(e.target.value.replace(/\b\w/g, (c) => c.toUpperCase()))}
+                  autoCapitalize="words"
                   className="h-10 rounded-xl bg-background/60 text-sm focus:ring-emerald-500"
                   required
                 />
@@ -339,7 +331,20 @@ export function StudentReservationModal({
                   maxLength={4}
                   value={middleInitial}
                   onChange={(e) => setMiddleInitial(e.target.value.toUpperCase())}
+                  autoCapitalize="characters"
                   className="h-10 rounded-xl bg-background/60 text-sm text-center focus:ring-emerald-500"
+                />
+              </div>
+              <div className="col-span-12 sm:col-span-5 space-y-1">
+                <span className="text-[11px] font-medium text-muted-foreground">Last Name</span>
+                <Input
+                  id="student-last-name"
+                  placeholder="e.g. Suarez"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value.replace(/\b\w/g, (c) => c.toUpperCase()))}
+                  autoCapitalize="words"
+                  className="h-10 rounded-xl bg-background/60 text-sm focus:ring-emerald-500"
+                  required
                 />
               </div>
             </div>

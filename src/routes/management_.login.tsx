@@ -47,7 +47,7 @@ function AdminLogin() {
       });
 
       if (error) {
-        toast.error(error.message);
+        toast.error(error.message || "Authentication failed. Please check your credentials or database connection.");
         setLoading(false);
         return;
       }
@@ -67,8 +67,8 @@ function AdminLogin() {
           setLoading(false);
         }
       }
-    } catch (err) {
-      toast.error("An unexpected error occurred");
+    } catch (err: any) {
+      toast.error(err?.message || "An unexpected error occurred. Please try again.");
       setLoading(false);
     }
   };
