@@ -83,14 +83,6 @@ export function Navbar() {
               <LayoutDashboard className="h-4 w-4 text-indigo-500" /> Owner Dashboard
             </Link>
           )}
-          {role === "admin" && (
-            <Link
-              to="/management"
-              className="rounded-xl px-3.5 py-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all flex items-center gap-1.5"
-            >
-              <ShieldCheck className="h-4 w-4 text-primary" /> Admin
-            </Link>
-          )}
         </nav>
 
         {/* Right Section / Actions */}
