@@ -8,7 +8,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { PrintButton } from "@/components/ui/print-button";
-import { ExportButton } from "@/components/ui/export-button";
+import { ExportPdfButton } from "@/components/ui/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -116,7 +116,7 @@ function AdminPage() {
             </TabsList>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <PrintButton />
-              <ExportButton fetchUrl="/api/management/export-listings" fileName="listings.csv" />
+              <ExportPdfButton />
             </div>
           </div>
           <TabsContent value="overview"><Overview /></TabsContent>

@@ -494,6 +494,7 @@ export const getAdminListings = createServerFn({ method: "GET" })
       id: h.id,
       name: h.name,
       address: h.address,
+      landmark: h.landmark,
       monthly_fee: h.monthlyFee,
       available_vacancies: h.availableVacancies,
       num_rooms: h.numRooms,
