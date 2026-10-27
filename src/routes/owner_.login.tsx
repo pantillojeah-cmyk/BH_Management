@@ -251,14 +251,18 @@ function SignUpForm() {
   const [lastNameTouched, setLastNameTouched] = useState(false);
   const [firstNameTouched, setFirstNameTouched] = useState(false);
   const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarTouched, setAvatarTouched] = useState(false);
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [documentPreviews, setDocumentPreviews] = useState<string[]>([]);
+  const [documentTouched, setDocumentTouched] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -275,6 +279,10 @@ function SignUpForm() {
     setLastNameTouched(false);
     setFirstNameTouched(false);
     setPhoneTouched(false);
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setAvatarTouched(false);
+    setDocumentTouched(false);
     const timer = setTimeout(() => {
       setEmail("");
       setPassword("");
@@ -311,15 +319,34 @@ function SignUpForm() {
 
   const capitalizeWords = (str: string) => str.replace(/\b\w/g, (c) => c.toUpperCase());
 
+  const avatarError = avatarTouched && !avatarFile ? "Profile picture / ID photo is required." : null;
   const firstNameError = firstNameTouched && !firstName.trim() ? "First Name is required." : null;
   const lastNameError = lastNameTouched && !lastName.trim() ? "Last Name is required." : null;
+  const emailError = emailTouched && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+    ? (!email.trim() ? "Email address is required." : "Please enter a valid email address.")
+    : null;
   const phoneError = getPhoneError(phone, phoneTouched);
+  const passwordError = passwordTouched && (!password || password.length < 6)
+    ? (!password ? "Password is required." : "Password must be at least 6 characters.")
+    : null;
+  const documentError = documentTouched && documentFiles.length === 0
+    ? "At least one permit or clearance document is required."
+    : null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAvatarTouched(true);
     setFirstNameTouched(true);
     setLastNameTouched(true);
+    setEmailTouched(true);
     setPhoneTouched(true);
+    setPasswordTouched(true);
+    setDocumentTouched(true);
+
+    if (!avatarFile) {
+      toast.error("Profile picture / ID photo is required.");
+      return;
+    }
 
     const cleanFirst = capitalizeWords(firstName.trim());
     const cleanLast = capitalizeWords(lastName.trim());
@@ -334,9 +361,32 @@ function SignUpForm() {
       return;
     }
 
+    if (!email.trim()) {
+      toast.error("Email address is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     const pErr = getPhoneError(phone, true);
     if (pErr) {
       toast.error(pErr);
+      return;
+    }
+
+    if (!password) {
+      toast.error("Password is required.");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (documentFiles.length === 0) {
+      toast.error("Please attach at least one permit or clearance document.");
       return;
     }
 
@@ -357,17 +407,20 @@ function SignUpForm() {
     if (data?.user) {
       const userId = data.user.id;
 
-      // 1. Upload avatar photo if chosen
+      // 1. Upload avatar photo
       let avatarUrl: string | null = null;
       if (avatarFile) {
         try {
           avatarUrl = await uploadOwnerPhoto(userId, avatarFile);
         } catch (err) {
           console.error("Avatar upload failed:", err);
+          toast.error("Failed to upload profile picture. Please try again.");
+          setBusy(false);
+          return;
         }
       }
 
-      // 2. Upload permit/documents if chosen
+      // 2. Upload permit/documents
       const uploadedDocs: string[] = [];
       if (documentFiles.length > 0) {
         for (const docFile of documentFiles) {
@@ -378,6 +431,12 @@ function SignUpForm() {
             console.error("Document upload failed:", err);
           }
         }
+      }
+
+      if (uploadedDocs.length === 0) {
+        toast.error("Failed to upload permit documents. Please try again.");
+        setBusy(false);
+        return;
       }
 
       // 3. Save profile with avatar and documents
@@ -413,6 +472,10 @@ function SignUpForm() {
     setLastNameTouched(false);
     setFirstNameTouched(false);
     setPhoneTouched(false);
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setAvatarTouched(false);
+    setDocumentTouched(false);
   };
 
   return (
@@ -428,14 +491,27 @@ function SignUpForm() {
       </div>
 
       {/* Profile Picture Upload */}
-      <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40">
-        <Label className="text-xs font-semibold text-foreground">Profile Picture / ID Photo</Label>
+      <div className={`space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border transition-colors ${
+        avatarError
+          ? "border-red-500 ring-1 ring-red-500/50"
+          : "border-indigo-200/60 dark:border-indigo-800/40"
+      }`}>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
+            Profile Picture / ID Photo <span className="text-red-500">*</span>
+          </Label>
+          <span className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium bg-indigo-100/60 dark:bg-indigo-900/40 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+            Required
+          </span>
+        </div>
         <div className="flex items-center gap-3.5 pt-1">
-          <div className="relative h-14 w-14 rounded-full overflow-hidden border-2 border-indigo-400/50 bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className={`relative h-14 w-14 rounded-full overflow-hidden border-2 bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0 shadow-sm ${
+            avatarError ? "border-red-500" : "border-indigo-400/50"
+          }`}>
             {avatarPreview ? (
               <img src={avatarPreview} alt="Profile Preview" className="h-full w-full object-cover" />
             ) : (
-              <User className="h-7 w-7 text-indigo-400" />
+              <User className={`h-7 w-7 ${avatarError ? "text-red-400" : "text-indigo-400"}`} />
             )}
           </div>
           <div className="flex-1 min-w-0 space-y-1">
@@ -452,6 +528,7 @@ function SignUpForm() {
                     if (f) {
                       setAvatarFile(f);
                       setAvatarPreview(URL.createObjectURL(f));
+                      setAvatarTouched(false);
                     }
                   }}
                 />
@@ -474,11 +551,17 @@ function SignUpForm() {
             </p>
           </div>
         </div>
+        {avatarError && (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{avatarError}</span>
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-8">
-          <Label htmlFor="su-firstname">First Name</Label>
+          <Label htmlFor="su-firstname">First Name <span className="text-red-500">*</span></Label>
           <Input
             id="su-firstname"
             placeholder="e.g. Juan"
@@ -512,7 +595,7 @@ function SignUpForm() {
       </div>
 
       <div>
-        <Label htmlFor="su-lastname">Last Name</Label>
+        <Label htmlFor="su-lastname">Last Name <span className="text-red-500">*</span></Label>
         <Input
           id="su-lastname"
           placeholder="e.g. Dela Cruz"
@@ -533,12 +616,27 @@ function SignUpForm() {
       </div>
 
       <div>
-        <Label htmlFor="su-email">Email</Label>
-        <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="new-password" />
+        <Label htmlFor="su-email">Email <span className="text-red-500">*</span></Label>
+        <Input
+          id="su-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => setEmailTouched(true)}
+          required
+          autoComplete="new-password"
+          className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
+        />
+        {emailError && (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{emailError}</span>
+          </p>
+        )}
       </div>
 
       <div>
-        <Label htmlFor="su-phone">Phone number</Label>
+        <Label htmlFor="su-phone">Phone number <span className="text-red-500">*</span></Label>
         <Input
           id="su-phone"
           type="text"
@@ -564,14 +662,15 @@ function SignUpForm() {
       </div>
 
       <div>
-        <Label htmlFor="su-pass">Password</Label>
+        <Label htmlFor="su-pass">Password <span className="text-red-500">*</span></Label>
         <div className="relative">
           <Input
             id="su-pass"
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="pr-10"
+            onBlur={() => setPasswordTouched(true)}
+            className={`pr-10 ${passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             required
             autoComplete="new-password"
           />
@@ -584,7 +683,14 @@ function SignUpForm() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-1">Must be at least 6 characters</p>
+        {passwordError ? (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{passwordError}</span>
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground mt-1">Must be at least 6 characters</p>
+        )}
       </div>
 
       {/* Boarding House Documents / Permit Photos */}
@@ -592,11 +698,16 @@ function SignUpForm() {
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold flex items-center gap-1.5">
             <FileText className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-            Boarding House Documents & Permits
+            Boarding House Documents & Permits <span className="text-red-500">*</span>
           </Label>
-          <span className="text-[10px] text-amber-700 dark:text-amber-300 font-medium bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-            For Admin Review
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium bg-indigo-100/60 dark:bg-indigo-900/40 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+              Required
+            </span>
+            <span className="text-[10px] text-amber-700 dark:text-amber-300 font-medium bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+              For Admin Review
+            </span>
+          </div>
         </div>
         <p className="text-[11px] text-muted-foreground">
           Attach photos of your Business Permit, Barangay Clearance, or Fire Safety documents.
@@ -631,8 +742,12 @@ function SignUpForm() {
         )}
 
         {/* Upload drop zone */}
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-indigo-300 dark:border-indigo-700/60 rounded-xl p-3.5 bg-indigo-50/20 dark:bg-indigo-950/10 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 cursor-pointer transition-colors text-center">
-          <Upload className="h-4 w-4 text-indigo-600 dark:text-indigo-400 mb-1" />
+        <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-3.5 cursor-pointer transition-colors text-center ${
+          documentError
+            ? "border-red-500 bg-red-50/20 dark:bg-red-950/20 hover:bg-red-50/40"
+            : "border-indigo-300 dark:border-indigo-700/60 bg-indigo-50/20 dark:bg-indigo-950/10 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30"
+        }`}>
+          <Upload className={`h-4 w-4 mb-1 ${documentError ? "text-red-500" : "text-indigo-600 dark:text-indigo-400"}`} />
           <span className="text-xs font-semibold text-foreground">
             {documentFiles.length > 0 ? "Attach more permit photos" : "Upload Permit / Documents"}
           </span>
@@ -648,10 +763,17 @@ function SignUpForm() {
                 setDocumentFiles((prev) => [...prev, ...files]);
                 const newPreviews = files.map((f) => URL.createObjectURL(f));
                 setDocumentPreviews((prev) => [...prev, ...newPreviews]);
+                setDocumentTouched(false);
               }
             }}
           />
         </label>
+        {documentError && (
+          <p className="text-xs font-medium text-red-500 mt-1 flex items-center gap-1.5 animate-in fade-in-50">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{documentError}</span>
+          </p>
+        )}
       </div>
 
       <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2" disabled={busy}>{busy ? "Creating account…" : "Create owner account"}</Button>
