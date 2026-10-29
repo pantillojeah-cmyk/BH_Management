@@ -83,6 +83,15 @@ export function Navbar() {
               <LayoutDashboard className="h-4 w-4 text-indigo-500" /> Owner Dashboard
             </Link>
           )}
+          {role === "admin" && (
+            <Link
+              to="/management"
+              title="Admin Dashboard"
+              className="rounded-xl px-3.5 py-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all flex items-center gap-1.5"
+            >
+              <LayoutDashboard className="h-4 w-4 text-indigo-500" /> Dashboard
+            </Link>
+          )}
         </nav>
 
         {/* Right Section / Actions */}
@@ -207,10 +216,10 @@ export function Navbar() {
               <Link
                 to="/management"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-indigo-500/10 hover:text-indigo-600 transition-colors"
               >
-                <ShieldCheck className="h-4 w-4 text-primary" />
-                <span>Admin Management</span>
+                <LayoutDashboard className="h-4 w-4 text-indigo-500" />
+                <span>Dashboard</span>
               </Link>
             )}
 
@@ -265,4 +274,3 @@ export function Navbar() {
     </header>
   );
 }
-

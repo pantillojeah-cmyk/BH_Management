@@ -78,7 +78,7 @@ function OwnerAuthPage() {
             />
             <div>
               <div className="font-bold text-lg leading-tight">BH Vacancy Tracker</div>
-              <div className="text-xs text-indigo-200">Owner Portal · ZDSPGC Dimataling</div>
+              <div className="text-xs text-indigo-200">Owner Portal · ZDSPGC-Dimataling</div>
             </div>
           </div>
 
@@ -403,7 +403,7 @@ function SignUpForm() {
     setBusy(true);
     const { data, error } = await authClient.signUp.email({ email, password, name: fullName });
     if (error) { toast.error(error.message); setBusy(false); return; }
-    
+
     if (data?.user) {
       const userId = data.user.id;
 
@@ -491,11 +491,10 @@ function SignUpForm() {
       </div>
 
       {/* Profile Picture Upload */}
-      <div className={`space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border transition-colors ${
-        avatarError
+      <div className={`space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border transition-colors ${avatarError
           ? "border-red-500 ring-1 ring-red-500/50"
           : "border-indigo-200/60 dark:border-indigo-800/40"
-      }`}>
+        }`}>
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
             Profile Picture / ID Photo <span className="text-red-500">*</span>
@@ -505,9 +504,8 @@ function SignUpForm() {
           </span>
         </div>
         <div className="flex items-center gap-3.5 pt-1">
-          <div className={`relative h-14 w-14 rounded-full overflow-hidden border-2 bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0 shadow-sm ${
-            avatarError ? "border-red-500" : "border-indigo-400/50"
-          }`}>
+          <div className={`relative h-14 w-14 rounded-full overflow-hidden border-2 bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0 shadow-sm ${avatarError ? "border-red-500" : "border-indigo-400/50"
+            }`}>
             {avatarPreview ? (
               <img src={avatarPreview} alt="Profile Preview" className="h-full w-full object-cover" />
             ) : (
@@ -742,11 +740,10 @@ function SignUpForm() {
         )}
 
         {/* Upload drop zone */}
-        <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-3.5 cursor-pointer transition-colors text-center ${
-          documentError
+        <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-3.5 cursor-pointer transition-colors text-center ${documentError
             ? "border-red-500 bg-red-50/20 dark:bg-red-950/20 hover:bg-red-50/40"
             : "border-indigo-300 dark:border-indigo-700/60 bg-indigo-50/20 dark:bg-indigo-950/10 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30"
-        }`}>
+          }`}>
           <Upload className={`h-4 w-4 mb-1 ${documentError ? "text-red-500" : "text-indigo-600 dark:text-indigo-400"}`} />
           <span className="text-xs font-semibold text-foreground">
             {documentFiles.length > 0 ? "Attach more permit photos" : "Upload Permit / Documents"}
@@ -913,7 +910,7 @@ function RejectedOwnerScreen({ userName, email }: { userName?: string; email?: s
       .then((d) => {
         if (d?.reason) setReason(d.reason);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (

@@ -68,7 +68,7 @@ function AdminPage() {
       ]);
       setPendingCount(pending.length);
       setRejectedCount(rejected.length);
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => {
@@ -89,7 +89,7 @@ function AdminPage() {
         />
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-xs text-muted-foreground">ZDSPGC Dimataling Campus · System overview & management</p>
+          <p className="text-xs text-muted-foreground">ZDSPGC-Dimataling Campus · System overview & management</p>
         </div>
       </div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -251,8 +251,8 @@ function Listings() {
           const statusStyle = r.status === "approved"
             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
             : r.status === "pending"
-            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
-            : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-300 dark:border-rose-700";
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+              : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-300 dark:border-rose-700";
           return (
             <div key={r.id} className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-md shadow-sm hover:shadow-md transition-shadow overflow-hidden">
               {/* Photo strip */}
@@ -263,9 +263,8 @@ function Listings() {
                       key={i}
                       src={url}
                       alt={`${r.name} photo ${i + 1}`}
-                      className={`h-20 w-28 flex-shrink-0 rounded-xl object-cover border border-border/60 shadow-sm ${
-                        i === 0 ? "ring-2 ring-indigo-400/50" : ""
-                      }`}
+                      className={`h-20 w-28 flex-shrink-0 rounded-xl object-cover border border-border/60 shadow-sm ${i === 0 ? "ring-2 ring-indigo-400/50" : ""
+                        }`}
                     />
                   ))}
                 </div>
@@ -277,7 +276,7 @@ function Listings() {
                   <div className="text-xs text-muted-foreground mt-0.5">{r.address}</div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 border border-emerald-200 dark:border-emerald-700 px-2 py-0.5 font-semibold text-emerald-700 dark:text-emerald-300">
-                      ₱{peso(r.monthly_fee).replace('₱','')}{r.price_type === "per_room" ? "/room" : "/person"}
+                      ₱{peso(r.monthly_fee).replace('₱', '')}{r.price_type === "per_room" ? "/room" : "/person"}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-500/10 border border-indigo-200 dark:border-indigo-700 px-2 py-0.5 font-semibold text-indigo-700 dark:text-indigo-300">
                       Good for {r.room_capacity ?? 1} {(r.room_capacity ?? 1) === 1 ? "person" : "persons"}
@@ -538,14 +537,13 @@ function UsersTab() {
             <button
               key={r}
               onClick={() => setRoleFilter(r)}
-              className={`rounded-xl px-3.5 py-2 text-xs font-semibold capitalize transition-all border ${
-                roleFilter === r
+              className={`rounded-xl px-3.5 py-2 text-xs font-semibold capitalize transition-all border ${roleFilter === r
                   ? r === "all" ? "bg-slate-700 text-white border-slate-600 shadow-sm"
                     : r === "admin" ? "bg-purple-600 text-white border-purple-500 shadow-sm"
-                    : r === "owner" ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
-                    : "bg-blue-600 text-white border-blue-500 shadow-sm"
+                      : r === "owner" ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                        : "bg-blue-600 text-white border-blue-500 shadow-sm"
                   : "bg-muted/60 text-muted-foreground border-border/50 hover:bg-accent hover:text-foreground"
-              }`}
+                }`}
             >
               {r === "admin" ? "🛡 Admin" : r === "owner" ? "🏠 Owner" : r === "customer" ? "👤 Customer" : "All"}
             </button>
@@ -566,11 +564,10 @@ function UsersTab() {
           <button
             type="button"
             onClick={toggleSelectAll}
-            className={`px-3 py-1.5 rounded-xl border font-medium transition-all ${
-              allSelectableSelected
+            className={`px-3 py-1.5 rounded-xl border font-medium transition-all ${allSelectableSelected
                 ? "bg-slate-800 text-white border-slate-700 dark:bg-slate-200 dark:text-slate-900 shadow-sm"
                 : "bg-background/80 hover:bg-muted border-border/60 text-foreground"
-            }`}
+              }`}
           >
             {allSelectableSelected ? "✓ Deselect All" : "Select All Filtered"}
           </button>
@@ -660,17 +657,16 @@ function UsersTab() {
                   u.role === "admin"
                     ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700"
                     : u.role === "owner"
-                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-                    : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700";
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700";
 
                 return (
                   <tr
                     key={u.id}
-                    className={`border-t border-border/40 transition-colors ${
-                      isSelected
+                    className={`border-t border-border/40 transition-colors ${isSelected
                         ? "bg-rose-50/70 dark:bg-rose-950/30"
                         : "hover:bg-muted/30 dark:hover:bg-white/5"
-                    }`}
+                      }`}
                   >
                     <td className="w-12 px-4 py-3.5 text-center">
                       <Checkbox
@@ -844,13 +840,12 @@ function UsersTab() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-foreground text-sm truncate">{editingUser.full_name}</span>
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
-                          editingUser.role === "admin"
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${editingUser.role === "admin"
                             ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300"
                             : editingUser.role === "owner"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300"
-                        }`}
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300"
+                          }`}
                       >
                         {editingUser.role === "owner" ? "🏠 Owner" : editingUser.role === "admin" ? "🛡 Admin" : "👤 Customer"}
                       </span>
@@ -962,13 +957,12 @@ function UsersTab() {
                   <Label className="text-xs font-semibold text-muted-foreground">Role</Label>
                   <div className="pt-0.5">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider border shadow-xs ${
-                        editForm.role === "admin"
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider border shadow-xs ${editForm.role === "admin"
                           ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-700"
                           : editForm.role === "owner"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
-                      }`}
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+                        }`}
                     >
                       {editForm.role === "admin" ? "🛡 Admin" : editForm.role === "owner" ? "🏠 Owner" : "👤 Customer"}
                     </span>
@@ -1035,11 +1029,10 @@ function UsersTab() {
                     <span className="font-semibold text-foreground truncate">{u.full_name}</span>
                     <span className="text-muted-foreground truncate">({u.email ?? "No email"})</span>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                    u.role === "admin" ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40"
-                    : u.role === "owner" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40"
-                    : "bg-blue-100 text-blue-800 dark:bg-blue-900/40"
-                  }`}>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${u.role === "admin" ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40"
+                      : u.role === "owner" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-900/40"
+                    }`}>
                     {u.role}
                   </span>
                 </div>
@@ -1319,19 +1312,17 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
           <button
             type="button"
             onClick={() => setSubTab("pending")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-              subTab === "pending"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${subTab === "pending"
                 ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
                 : "bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             <span>⏳ Pending Approval</span>
             <span
-              className={`px-2 py-0.5 text-[11px] rounded-full font-bold ${
-                subTab === "pending"
+              className={`px-2 py-0.5 text-[11px] rounded-full font-bold ${subTab === "pending"
                   ? "bg-white/20 text-white"
                   : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-              }`}
+                }`}
             >
               {rows.length}
             </span>
@@ -1340,19 +1331,17 @@ function PendingOwnersTab({ onActionDone }: { onActionDone?: () => void }) {
           <button
             type="button"
             onClick={() => setSubTab("rejected")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-              subTab === "rejected"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${subTab === "rejected"
                 ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
                 : "bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             <span>❌ Rejected Owners</span>
             <span
-              className={`px-2 py-0.5 text-[11px] rounded-full font-bold ${
-                subTab === "rejected"
+              className={`px-2 py-0.5 text-[11px] rounded-full font-bold ${subTab === "rejected"
                   ? "bg-white/20 text-white"
                   : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-              }`}
+                }`}
             >
               {rejectedRows.length}
             </span>

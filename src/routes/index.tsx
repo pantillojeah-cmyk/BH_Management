@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Building2, Users, Search, ShieldCheck, MapPin, ArrowRight, UserCircle, Home, Check, Menu, X, Compass, Sparkles } from "lucide-react";
+import { Building2, Users, Search, ShieldCheck, MapPin, ArrowRight, UserCircle, Home, Check, Menu, X, Compass, Sparkles, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -55,44 +55,40 @@ function LandingPage() {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
-            <Link
-              to="/browse"
-              className="rounded-xl px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all"
-            >
-              Browse Listings
-            </Link>
-            <Link
-              to="/owner/login"
-              className="rounded-xl px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800/60 hover:backdrop-blur-md border border-transparent hover:border-white/40 dark:hover:border-white/10 transition-all"
-            >
-              For Owners
-            </Link>
-          </nav>
-
           <div className="flex items-center gap-2 sm:gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            {role === "admin" ? (
+              <Link to="/management">
                 <Button
                   variant="outline"
-                  className="hidden sm:flex gap-2 rounded-xl border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/70 shadow-sm"
+                  className="hidden sm:flex gap-2 rounded-xl border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/70 shadow-sm text-indigo-600 dark:text-indigo-400 font-medium"
                 >
-                  <UserCircle className="h-4 w-4 text-emerald-600" /> Sign In
+                  <LayoutDashboard className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Dashboard
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 rounded-2xl border-white/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-xl p-1.5">
-                <Link to="/customer/login" className="w-full block">
-                  <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
-                    <Users className="h-4 w-4 text-emerald-600" /> Student
-                  </DropdownMenuItem>
-                </Link>
-                <Link to="/owner/login" className="w-full block">
-                  <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
-                    <Building2 className="h-4 w-4 text-indigo-600" /> Property Owner
-                  </DropdownMenuItem>
-                </Link>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </Link>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="hidden sm:flex gap-2 rounded-xl border-white/60 dark:border-white/15 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/70 shadow-sm"
+                  >
+                    <UserCircle className="h-4 w-4 text-emerald-600" /> Sign In
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52 rounded-2xl border-white/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-xl p-1.5">
+                  <Link to="/customer/login" className="w-full block">
+                    <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
+                      <Users className="h-4 w-4 text-emerald-600" /> Student
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link to="/owner/login" className="w-full block">
+                    <DropdownMenuItem className="cursor-pointer gap-2.5 rounded-xl py-2.5 text-sm font-medium">
+                      <Building2 className="h-4 w-4 text-indigo-600" /> Property Owner
+                    </DropdownMenuItem>
+                  </Link>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <Link to="/browse">
               <Button className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-3 sm:px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/25 border border-white/30 transition-all hover:scale-[1.02]">
@@ -142,9 +138,9 @@ function LandingPage() {
                 <Link
                   to="/management"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-slate-500/10"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-indigo-500/10 hover:text-indigo-600"
                 >
-                  <ShieldCheck className="h-4 w-4 text-primary" /> Campus Admin
+                  <LayoutDashboard className="h-4 w-4 text-indigo-500" /> Dashboard
                 </Link>
               )}
             </div>
@@ -160,7 +156,7 @@ function LandingPage() {
               <div className="space-y-3 sm:space-y-4">
                 <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 sm:px-4 sm:py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 backdrop-blur-md shadow-sm">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Smart Campus Living · ZDSPGC Dimataling
+                  Smart Campus Living · ZDSPGC-Dimataling
                 </div>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.12]">
                   Find Your Perfect <br className="hidden sm:inline" />
@@ -171,26 +167,6 @@ function LandingPage() {
                 <p className="max-w-[580px] text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">
                   Discover verified boarding houses, check live room vacancy statuses, and reserve your bed with instant peace of mind.
                 </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link to="/browse" className="flex-1 sm:flex-none">
-                  <Button
-                    size="lg"
-                    className="w-full gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-600/25 border border-white/30 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 transition-all hover:scale-[1.01]"
-                  >
-                    <Search className="h-5 w-5" /> Browse Vacancies
-                  </Button>
-                </Link>
-                <Link to="/owner/login" className="flex-1 sm:flex-none">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl border-white/70 dark:border-white/15 bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-slate-800/80 shadow-sm transition-all"
-                  >
-                    List Your Property
-                  </Button>
-                </Link>
               </div>
 
               {/* Quick stats glass pills */}
@@ -227,7 +203,7 @@ function LandingPage() {
                   </div>
                   <div>
                     <div className="text-xs font-bold text-foreground">Verified Campus Area</div>
-                    <div className="text-[10px] text-muted-foreground">ZDSPGC Dimataling</div>
+                    <div className="text-[10px] text-muted-foreground">ZDSPGC-Dimataling</div>
                   </div>
                 </div>
 

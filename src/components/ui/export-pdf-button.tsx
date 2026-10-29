@@ -20,12 +20,18 @@ export function ExportPdfButton({
   const handleExport = async () => {
     setLoading(true);
     try {
-      // 1. Fetch listings
-      const listings = await getAdminListings({ data: { filter: "all" } });
+      // 1. Fetch listings with a 30-second timeout to prevent infinite loading
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out. Please try again.")), 30000)
+      );
+
+      const listings = await Promise.race([
+        getAdminListings({ data: { filter: "all" } }),
+        timeoutPromise,
+      ]);
 
       if (!listings || listings.length === 0) {
         toast.info("No boarding house listings found to export.");
-        setLoading(false);
         return;
       }
 
